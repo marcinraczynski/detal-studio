@@ -14,6 +14,9 @@ jobs:
           for q in "detalstudio.pl A" "www.detalstudio.pl A" "detalstudio.pl AAAA" "detalstudio.pl NS" "www.detalstudio.pl CNAME"; do
             echo "== $q"; dig +short $q || true
           done
+          echo "== adres IP hostingu (klaster OVH)"
+          dig +short cluster014.hosting.ovh.net A || true
+          dig +short detalstu.cluster014.hosting.ovh.net A || true
           for u in http://detalstudio.pl/ https://detalstudio.pl/ http://www.detalstudio.pl/ https://www.detalstudio.pl/; do
             echo "== $u"
             curl -sS -m 20 -o /tmp/body -D - "$u" 2>&1 | head -15 || true
