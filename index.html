@@ -135,6 +135,8 @@ input::placeholder,textarea::placeholder{color:#5f565a}
 .consent a{color:inherit;text-underline-offset:3px}
 .consent a:hover{color:var(--paper)}
 .err{color:#ff7fb3;font-size:14px;min-height:1.4em;margin:-8px 0 0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.send[disabled]{opacity:.6;cursor:default}
 .done{display:none;outline:none}
 .done .lead{margin-bottom:34px}
 .trace{position:relative;height:9px;margin-bottom:30px}
@@ -581,12 +583,34 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
   const ptsMat = (size, o, col) => new THREE.PointsMaterial({color: col || PAPER, size, map: dotTex, transparent: true, opacity: o, depthWrite: false, sizeAttenuation: true});
   const circle = (r, n) => { const a = []; for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; a.push(Math.cos(t) * r, 0, Math.sin(t) * r); } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g; };
 
-  // dust for depth
-  {
+  // ambient background: two drifting layers of dust and a few tiny marks floating along the route
+  const mkDust = (n, size, op, gen) => {
     const a = [];
-    for (let i = 0; i < 1800; i++) a.push(-28 + rnd() * 56, -12 + rnd() * 38, 8 - rnd() * 112);
+    for (let i = 0; i < n; i++) a.push(-28 + gen() * 56, -12 + gen() * 38, 8 - gen() * 112);
     const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
-    scene.add(new THREE.Points(g, ptsMat(0.05, 0.45)));
+    const p = new THREE.Points(g, ptsMat(size, op)); p.frustumCulled = false; scene.add(p); return p;
+  };
+  const dust = mkDust(1800, 0.05, 0.45, rnd);
+  const rnd2 = mulberry32(11);
+  const dust2 = mkDust(320, 0.1, 0.2, rnd2);
+  const glyphs = [];
+  { const shapes = [
+      [-1,0,0, 1,0,0, 0,-1,0, 0,1,0],                       // cross
+      [-1,0,0, 1,0,0],                                       // dash
+      [-1,-1,0, 1,-1,0, 1,-1,0, 1,1,0, 1,1,0, -1,1,0, -1,1,0, -1,-1,0], // square
+      [-1,-.8,0, 1,-.8,0, 1,-.8,0, 0,1,0, 0,1,0, -1,-.8,0]   // triangle
+    ].map(a => { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g; });
+    const c = new THREE.Vector3();
+    for (let i = 0; i < 70; i++) {
+      path.getPoint(rnd2(), c);
+      const ang = rnd2() * 6.2832, r = 3.2 + rnd2() * 5.5;
+      const m = new THREE.LineSegments(shapes[i % shapes.length], lineMat(0.16 + rnd2() * 0.2));
+      m.position.set(c.x + Math.cos(ang) * r, c.y + Math.sin(ang) * r * 0.7, c.z + (rnd2() - .5) * 5);
+      m.scale.setScalar(0.06 + rnd2() * 0.09);
+      m.userData = {y: m.position.y, a: rnd2() * 6.28, b: rnd2() * 6.28, v: (0.1 + rnd2() * 0.25) * (i % 2 ? 1 : -1)};
+      m.rotation.set(m.userData.a, m.userData.b, 0);
+      glyphs.push(m); scene.add(m);
+    }
   }
 
   // the line and the detail at its tip
@@ -736,6 +760,16 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
   });
   const matter = new THREE.Points(mGeo, mMat); matter.position.copy(ST[8]); matter.frustumCulled = false; scene.add(matter);
 
+  // each motif is visible only around its own scene, so nothing from the next one shows in the background
+  const fades = [];
+  const fadeable = (obj, k0, k1) => {
+    const mats = [];
+    obj.traverse(o => { if (o.material && !mats.includes(o.material)) { o.material.userData.base = o.material.opacity; mats.push(o.material); } });
+    fades.push({obj, mats, k0, k1});
+  };
+  const vis = (s, k0, k1) => { const d = s < k0 ? k0 - s : s > k1 ? s - k1 : 0; return clamp(1 - (d - 0.3) / 0.32); };
+  fadeable(halo, 0, 0); fadeable(strat, 4, 4); fadeable(brand, 5, 5); fadeable(comm, 6, 6); fadeable(team, 7, 7);
+
   /* ---------- layout + loop ---------- */
   function resize() {
     W = innerWidth; H = innerHeight; mobile = W < 860;
@@ -759,6 +793,20 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
     const u = s / LAST, k0 = Math.min(LAST - 1, Math.floor(s)), f = s - k0;
     const near = k => Math.max(0, 1 - Math.abs(s - k));
 
+    for (const f of fades) {
+      const v = vis(s, f.k0, f.k1);
+      f.obj.visible = v > 0.004;
+      if (f.obj.visible) for (const m of f.mats) m.opacity = m.userData.base * v;
+    }
+    if (!rm) {
+      dust.position.set(Math.sin(t * 0.05) * 0.6, Math.cos(t * 0.04) * 0.4, 0);
+      dust2.position.set(Math.cos(t * 0.07) * 1.2, Math.sin(t * 0.06) * 0.9, Math.sin(t * 0.05) * 0.8);
+      for (const g of glyphs) {
+        g.rotation.set(g.userData.a + t * g.userData.v, g.userData.b + t * g.userData.v * 0.7, 0);
+        g.position.y = g.userData.y + Math.sin(t * 0.2 + g.userData.a) * 0.3;
+      }
+    }
+
     // line + detail
     path.getPoint(u, hp);
     tube.geometry.setDrawRange(0, Math.max(1, Math.floor(fracAt(u) * TUBE)) * 36);
@@ -768,7 +816,9 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
     halo.rotation.set(t * 0.15, t * 0.22, 0);
 
     // cloud → lattice
-    if (s < 3.2) {
+    const v12 = vis(s, 1, 2) * (s < 1 ? 0 : 1) + (s < 1 ? 1 : 0); // the cloud blooms on the way in, fades after the lattice
+    pts.visible = latLines.visible = s < 2.7;
+    if (s < 2.7) {
       const bloom = ease(clamp(s / 0.9)), drift = rm ? 0 : 0.12;
       for (let i = 0; i < NP; i++) {
         const m = ease(clamp((s - 1 - pDelay[i]) / 0.7)), w = (1 - m) * drift;
@@ -776,9 +826,9 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
         pPos[3*i] = cx + (lattice[3*i] - cx) * m; pPos[3*i+1] = cy + (lattice[3*i+1] - cy) * m; pPos[3*i+2] = cz + (lattice[3*i+2] - cz) * m;
       }
       pGeo.attributes.position.needsUpdate = true;
-      pts.material.opacity = 0.95 * clamp(s / 0.5);
+      pts.material.opacity = 0.95 * clamp((s - 0.35) / 0.4) * v12;
       const lo = clamp((s - 1.25) / 0.6);
-      latLines.material.opacity = 0.34 * lo;
+      latLines.material.opacity = 0.34 * lo * v12;
       if (lo > 0) {
         for (let i = 0; i < pairs.length; i++) { const p = pairs[i] * 3; lPos[3*i] = pPos[p]; lPos[3*i+1] = pPos[p+1]; lPos[3*i+2] = pPos[p+2]; }
         lGeo.attributes.position.needsUpdate = true;
@@ -822,10 +872,10 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
       spokeGeo.attributes.position.needsUpdate = true;
     }
     mMat.uniforms.uT.value = rm ? 2 : t * 0.5;
-    mMat.uniforms.uOp.value = 0.85 * clamp((s - 6.4) / 1.2);
+    mMat.uniforms.uOp.value = 0.85 * clamp((s - 7.35) / 0.5);
     matter.rotation.y = t * 0.06;
     matter.scale.setScalar(sentAt && !rm ? 1 + 0.22 * Math.exp(-(ms - sentAt) / 900) : 1);
-    matter.visible = s > 6.4;
+    matter.visible = s > 7.35;
 
     // camera
     camCurve.getPoint(u, camera.position);
