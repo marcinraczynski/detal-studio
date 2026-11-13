@@ -51,7 +51,9 @@ Jednostronicowa strona Detal Studio (butikowe studio kreatywne: strategia, marka
 ## Stan wdrożenia (listopad 2026)
 
 - Repo: `marcinraczynski/detal-studio`. Domena docelowa: `detalstudio.pl` (hosting OVH, katalog `www/`).
-- Wdrożenie: `.github/workflows/deploy-ovh.yml` wysyła pliki przez FTPS po każdym pushu na `main`. Dane FTP są w sekretach repo (`FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `FTP_DIR`).
-- Formularz: `send.php` (PHP `mail()` na OVH) wysyła zgłoszenia na `marcin@detalstudio.pl`. Działa tylko na OVH, nie na GitHub Pages.
+- Wdrożenie: `.github/workflows/deploy-ovh.yml` wysyła pliki przez SFTP (OVH nie obsługuje FTPS) po każdym pushu na `main`. Dane FTP są w jednym zbiorczym sekrecie repo `DETAL`; odczytuje je `.github/ftp-config.py`.
+- Diagnostyka: `.github/workflows/diagnostyka.yml` (ręcznie) sprawdza DNS domeny, odpowiedź strony i zawartość serwera. Sesja w chmurze nie ma dostępu do domeny, więc to jedyny sposób weryfikacji.
+- Domena: 13.11.2026 `detalstudio.pl` nie miała rekordów A; trzeba ją dodać w panelu OVH (Hosting → Multisite, katalog `www`, SSL).
+- Formularz: `send.php` (PHP `mail()` na OVH) wysyła zgłoszenia na `marcin@detalstudio.pl`. Działa tylko na OVH, nie na GitHub Pages. Pisany pod stare PHP (hosting z 2011 r., `.htaccess` z `PHP_VER 5`).
 - Zrobione: meta, favicon, obrazek OG, polityka prywatności (`polityka-prywatnosci.html`, bazowy szablon), informacja pod formularzem.
 - Zostało: punkt 6 (test na urządzeniach) i sprawdzenie, czy poczta z formularza dochodzi.
