@@ -1,8 +1,15 @@
 name: Wdrożenie na OVH
 
-# Uruchamiane ręcznie: zakładka Actions → "Wdrożenie na OVH" → Run workflow
+# Uruchamia się po każdej zmianie na gałęzi main; można też ręcznie:
+# zakładka Actions → "Wdrożenie na OVH" → Run workflow
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: deploy-ovh
+  cancel-in-progress: false
 
 jobs:
   deploy:

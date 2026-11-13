@@ -47,3 +47,11 @@ Jednostronicowa strona Detal Studio (butikowe studio kreatywne: strategia, marka
 - Bryła przy „Marce” na wąskim ekranie – czy jej zarys jest w porządku.
 - W scenie „Z jednej myśli…” linia przecina nagłówek, a przy „Marce” przechodzi tuż pod akapitem – zostawić czy odsunąć.
 - Link „Umów 30 minut” prowadzi do Calendly: https://calendly.com/marcinraczynski/30-minutowe-spotkanie-1-na-1
+
+## Stan wdrożenia (listopad 2026)
+
+- Repo: `marcinraczynski/detal-studio`. Domena docelowa: `detalstudio.pl` (hosting OVH, katalog `www/`).
+- Wdrożenie: `.github/workflows/deploy-ovh.yml` wysyła pliki przez FTPS po każdym pushu na `main`. Dane FTP są w sekretach repo (`FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`, `FTP_DIR`).
+- Formularz: `send.php` (PHP `mail()` na OVH) wysyła zgłoszenia na `marcin@detalstudio.pl`. Działa tylko na OVH, nie na GitHub Pages.
+- Zrobione: meta, favicon, obrazek OG, polityka prywatności (`polityka-prywatnosci.html`, bazowy szablon), informacja pod formularzem.
+- Zostało: punkt 6 (test na urządzeniach) i sprawdzenie, czy poczta z formularza dochodzi.

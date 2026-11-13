@@ -9,7 +9,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.png" type="image/png" sizes="64x64">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="canonical" href="https://detalstudio.pl/">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://detalstudio.pl/">
+<meta property="og:image" content="https://detalstudio.pl/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:site_name" content="Detal Studio">
 <meta property="og:title" content="Detal Studio · studio kreatywne">
 <meta property="og:description" content="Różnicę robi detal. Prowadzimy marki od strategii, przez identyfikację, po komunikację.">
@@ -121,7 +126,8 @@ input::placeholder,textarea::placeholder{color:#5f565a}
 .err{color:#ff7fb3;font-size:14px;min-height:1.4em;margin:-8px 0 0}
 .done{display:none;margin-top:30px;padding:26px 0;border-top:1px solid var(--pink)}
 .done h3{font-size:2.2rem;margin-bottom:8px}
-.done .note{font:400 11px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.send[disabled]{opacity:.6;cursor:default}
 .sent form{display:none}
 .sent .done{display:block}
 
@@ -262,6 +268,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
         </div>
         <div><label class="f" for="f-company" data-i18n="fCompany"></label><input type="text" id="f-company" name="company" autocomplete="organization"></div>
         <div><label class="f" for="f-msg" data-i18n="fMsg"></label><textarea id="f-msg" name="message" data-i18n-ph="fMsgPh"></textarea></div>
+        <div class="hp" aria-hidden="true"><label for="f-website">Website</label><input type="text" id="f-website" name="website" tabindex="-1" autocomplete="off"></div>
         <p class="err" id="f-err" role="alert" aria-live="polite"></p>
         <div class="submit">
           <button class="send" type="submit" data-i18n="send"></button>
@@ -273,7 +280,6 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       <div class="done" id="done">
         <h3 data-i18n="doneH"></h3>
         <p data-i18n="doneP"></p>
-        <p class="note" data-i18n="doneNote"></p>
       </div>
     </div>
   </section>
@@ -313,7 +319,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       send:"Wyślij", alt:"Wolisz od razu porozmawiać?", altLink:"Umów 30 minut",
       errName:"Podaj imię i nazwisko.", errEmail:"Podaj poprawny adres e-mail, żebyśmy mogli odpowiedzieć.",
       doneH:"Dziękujemy.", doneP:"Wrócimy do Ciebie w ciągu jednego dnia roboczego.",
-      doneNote:"Prototyp: wysyłka formularza zostanie podłączona przy wdrożeniu."
+      errSend:"Nie udało się wysłać wiadomości. Spróbuj ponownie albo napisz na marcin@detalstudio.pl.", sending:"Wysyłanie…"
     },
     en: {
       navCta:"Let's talk", r0:"Detail", r1:"Understanding", r2:"Pattern", r3:"What we do", r4:"Team", r5:"Contact",
@@ -342,7 +348,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       send:"Send", alt:"Rather talk right away?", altLink:"Book 30 minutes",
       errName:"Please enter your name.", errEmail:"Please enter a valid email address so we can reply.",
       doneH:"Thank you.", doneP:"We'll get back to you within one working day.",
-      doneNote:"Prototype: form delivery will be connected at launch."
+      errSend:"The message could not be sent. Please try again or write to marcin@detalstudio.pl.", sending:"Sending…"
     }
   };
 
@@ -378,7 +384,17 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
     if (!name.value.trim()) { err.textContent = dict[lang].errName; name.focus(); return; }
     if (!email.value.trim() || !email.checkValidity()) { err.textContent = dict[lang].errEmail; email.focus(); return; }
     err.textContent = "";
-    document.getElementById("contact-box").classList.add("sent");
+    const form = e.currentTarget, btn = form.querySelector(".send"), fd = new FormData(form);
+    const body = new URLSearchParams({
+      name: name.value.trim(), email: email.value.trim(), company: fd.get("company") || "",
+      message: fd.get("message") || "", topic: fd.getAll("topic").join(", "), website: fd.get("website") || "", lang
+    });
+    btn.disabled = true; btn.textContent = dict[lang].sending;
+    fetch("send.php", {method: "POST", body, headers: {Accept: "application/json"}})
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(j => { if (!j || !j.ok) throw new Error("send"); document.getElementById("contact-box").classList.add("sent"); })
+      .catch(() => { err.textContent = dict[lang].errSend; })
+      .finally(() => { btn.disabled = false; btn.textContent = dict[lang].send; });
   });
 
   /* ---------- scroll → story position ---------- */
