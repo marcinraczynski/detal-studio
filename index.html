@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Detal Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one pink line travels through 3D space; the camera follows it from station to station, text sits where the object is not */
+  --ink:#0c0a0b;
+  --line:#2c2629;
+  --paper:#efe9e6;
+  --muted:#8e8488;
+  --pink:#e2337f;
+  --f-display:"Instrument Serif","Times New Roman",serif;
+  --f-body:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --gutter:clamp(20px,4vw,56px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--ink);color:var(--paper);font-family:var(--f-body);font-weight:300;font-size:clamp(16px,1.05vw,18px);line-height:1.6;-webkit-font-smoothing:antialiased}
+::selection{background:var(--pink);color:var(--paper)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
+
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:0;pointer-events:none}
+
+header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px var(--gutter);background:linear-gradient(var(--ink) 20%,rgba(12,10,11,0))}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.brand svg{width:38px;height:38px;flex:none}
+.actions{display:flex;align-items:center;gap:14px}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px}
+.lang button{background:none;border:0;color:var(--muted);font:500 11px var(--f-mono);letter-spacing:.1em;padding:6px 10px;border-radius:999px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--paper);color:var(--ink)}
+.cta-sm{font:400 14px var(--f-body);text-decoration:none;padding:9px 16px;border:1px solid var(--pink);border-radius:999px;color:var(--paper);transition:background .2s}
+.cta-sm:hover{background:var(--pink)}
+
+.rail{position:fixed;right:var(--gutter);top:50%;transform:translateY(-50%);z-index:5;display:grid;gap:14px;justify-items:end}
+.rail button{display:flex;align-items:center;gap:10px;background:none;border:0;padding:2px 0;cursor:pointer;color:var(--muted);font:400 10px var(--f-mono);letter-spacing:.14em;text-transform:uppercase}
+.rail button span{opacity:0;transform:translateX(6px);transition:opacity .25s,transform .25s}
+.rail button:hover span,.rail button.on span{opacity:1;transform:none}
+.rail button i{width:18px;height:1px;background:var(--line);transition:width .25s,background .25s}
+.rail button.on{color:var(--paper)}
+.rail button.on i{width:34px;background:var(--pink)}
+
+.hud{position:fixed;left:var(--gutter);bottom:18px;z-index:5;display:flex;gap:22px;font:400 10px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums;pointer-events:none;transition:opacity .3s}
+.hud b{font-weight:500;color:var(--paper)}
+
+main{position:relative;z-index:1}
+section{padding:0 var(--gutter)}
+.chapter{min-height:150vh}
+.text{position:sticky;top:var(--top,24vh);max-width:min(32rem,42vw);padding:12px 0}
+.pos-r{margin-left:auto;margin-right:clamp(0px,9vw,9rem)}
+.pos-c{margin-left:auto;margin-right:auto;max-width:min(60rem,86vw);text-align:center}
+.pos-c .eyebrow{justify-content:center}
+#start{min-height:100vh;min-height:100svh;display:flex;align-items:center;padding-top:90px;padding-bottom:60px}
+#start .text{position:static;max-width:min(38rem,46vw)}
+.eyebrow{display:flex;align-items:center;gap:10px;margin:0 0 22px;font:400 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--pink);flex:none}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;margin:0;text-wrap:balance}
+h1{font-size:clamp(3.1rem,7vw,7rem);line-height:.98;letter-spacing:-.015em;margin-bottom:28px}
+h2{font-size:clamp(2.5rem,4.8vw,4.6rem);line-height:1;letter-spacing:-.01em;margin-bottom:24px}
+h1 em,h2 em{font-style:italic;color:var(--pink)}
+p{margin:0 0 14px;color:#cdc5c2}
+.lead{font-size:clamp(17px,1.25vw,20px);color:var(--paper)}
+.hint{margin-top:40px;display:flex;align-items:center;gap:12px;font:400 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.hint::after{content:"";width:1px;height:34px;background:linear-gradient(var(--pink),transparent)}
+
+/* varied text treatments */
+#calosc{min-height:125vh}
+#calosc h2{font-size:clamp(3rem,8.4vw,8.6rem);line-height:.94;margin:0}
+.area .num{display:block;font:400 11px var(--f-mono);letter-spacing:.16em;color:var(--pink);margin-bottom:10px}
+.area h2{font-size:clamp(3.4rem,8vw,8rem);line-height:.9;margin-bottom:22px}
+.area p{font-size:clamp(17px,1.25vw,20px);max-width:24rem}
+.area.pos-r{text-align:right}
+.area.pos-r p{margin-left:auto}
+.area.it h2{font-style:italic}
+.side{border-left:1px solid var(--pink);padding-left:26px}
+.roles{white-space:nowrap;font:400 clamp(9px,2.7vw,11px)/2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--paper);margin:18px 0}
+
+#kontakt{min-height:100vh;padding-top:16vh}
+#kontakt .text{position:static;max-width:min(36rem,46vw)}
+form{display:grid;gap:22px;margin-top:30px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend,.f{display:block;margin-bottom:10px;font:400 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;width:1px;height:1px}
+.chip span{display:inline-block;padding:8px 15px;border:1px solid var(--line);border-radius:999px;font-size:14px;color:#cdc5c2;cursor:pointer;background:rgba(12,10,11,.5);transition:border-color .2s,background .2s,color .2s}
+.chip span:hover{border-color:var(--muted)}
+.chip input:checked+span{border-color:var(--pink);background:rgba(226,51,127,.2);color:var(--paper)}
+.chip input:focus-visible+span{outline:2px solid var(--pink);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+input[type=text],input[type=email],textarea{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;color:var(--paper);font:300 16px/1.5 var(--f-body);padding:8px 0}
+textarea{resize:vertical;min-height:92px}
+input:focus,textarea:focus{outline:none;border-bottom-color:var(--pink)}
+input::placeholder,textarea::placeholder{color:#5f565a}
+.submit{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.send{background:var(--pink);color:var(--paper);border:0;border-radius:999px;padding:15px 28px;font:500 15px var(--f-body);cursor:pointer;transition:background .2s,color .2s}
+.send:hover{background:var(--paper);color:var(--ink)}
+.alt{font-size:14px;color:var(--muted);margin:0}
+.alt a{color:var(--paper);text-underline-offset:3px}
+.err{color:#ff7fb3;font-size:14px;min-height:1.4em;margin:-8px 0 0}
+.done{display:none;margin-top:30px;padding:26px 0;border-top:1px solid var(--pink)}
+.done h3{font-size:2.2rem;margin-bottom:8px}
+.done .note{font:400 11px var(--f-mono);letter-spacing:.08em;color:var(--muted)}
+.sent form{display:none}
+.sent .done{display:block}
+
+footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+@media (max-width:860px){
+  .rail,.hud,.cta-sm,.brand .word{display:none}
+  #start{align-items:flex-end;padding-bottom:10svh}
+  #start .text{max-width:none}
+  .chapter .text{top:46svh;max-width:none;margin:0 calc(var(--gutter) * -1);margin-right:calc(var(--gutter) * -1);padding:20px var(--gutter) 24px;background:rgba(12,10,11,.8);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);text-align:left}
+  .chapter .pos-c{text-align:center}
+  .area.pos-r p{margin-left:0}
+  .side{border-left:0}
+  #kontakt{padding-top:50svh}
+  #kontakt .text{max-width:none;margin:0 calc(var(--gutter) * -1);padding:24px var(--gutter);background:rgba(12,10,11,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  .row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<header>
+  <a class="brand" href="#start" aria-label="Detal Studio">
+    <svg viewBox="0 0 228.62 230.60" aria-hidden="true"><rect x="3" y="3" width="222.62" height="224.6" fill="none" stroke="currentColor" stroke-width="6"/><path d="M44.0 186.6V44.0H73.83604239004629Q89.20986569251544 44.0 97.89529622395834 48.726642252604165Q106.58072675540124 53.45328450520833 110.1748004677855 63.30807421272183Q113.76887418016976 73.16286392023532 113.76887418016976 88.51663947964892V140.52049244068286Q113.76887418016976 156.23431821469907 110.1748004677855 166.44915813681519Q106.58072675540124 176.66399805893133 98.0518397955247 181.63199902946565Q89.52295283564814 186.6 74.51555025077161 186.6ZM67.88245322145062 167.40722180025077H74.08888165509259Q81.48542992862654 167.40722180025077 84.66765407986111 164.5586258801119Q87.84987823109569 161.71002995997299 88.59210069444445 156.13550534095293Q89.33432315779322 150.56098072193288 89.33432315779322 142.4445282359182V85.81912109374998Q89.33432315779322 77.82533582899305 88.35901391300155 72.90957802854938Q87.38370466820987 67.9938202281057 84.14814694251544 65.74265751591435Q80.91258921682099 63.491494803722986 73.82912808641976 63.491494803722986H67.88245322145062ZM153.12740162037036 188.528591760706Q141.81283516589505 188.528591760706 134.24542884355708 183.5912575954861Q126.67802252121913 178.6539234302662 122.80444275655864 168.92180094401039Q118.93086299189814 159.1896784577546 118.41827015817901 144.57190622588735L139.01381293402778 140.27743598090277Q139.27356650270062 148.8800013864776 140.6814682195216 155.00425051842205Q142.0893699363426 161.1284996503665 144.91554482542438 164.29852753062306Q147.74171971450616 167.46855541087962 152.22962601273147 167.46855541087962Q157.36938295717593 167.46855541087962 159.41728756751542 163.78628228081595Q161.46519217785493 160.10400915075232 161.46519217785493 154.8736318479938Q161.46519217785493 145.76449465904705 157.73778452932098 139.75212456597222Q154.01037688078702 133.73975447289737 147.8938343942901 127.6393596884645L133.65776909722223 113.28166431568286Q126.9357952353395 106.66107283227237 122.78024269386573 98.43729727285879Q118.62469015239196 90.2135217134452 118.62469015239196 78.0979201027199Q118.62469015239196 60.823504231770826 127.42962601273148 51.56614773220485Q136.234561873071 42.30879123263887 151.40196518132717 42.30879123263887Q160.44591169945988 42.30879123263887 166.33282455632718 45.5992083514178Q172.21973741319445 48.889625470196734 175.57134331597223 54.556709255642346Q178.92294921874998 60.22379304108796 180.44443238811726 67.17774365837191Q181.96591555748455 74.13169427565586 182.33233627507715 81.51214343412421L161.85037495177468 85.28641698013116Q161.59062138310185 78.70330475983795 160.7614842544367 73.60866084346063Q159.9323471257716 68.51401692708332 157.6350604021991 65.59329921392745Q155.33777367862655 62.6725815007716 150.8034481095679 62.6725815007716Q146.06961684992285 62.6725815007716 143.66912012924382 66.46161895375192Q141.26862340856482 70.25065640673225 141.26862340856482 75.35836648823302Q141.26862340856482 82.78991982542438 144.07997926311728 87.53132598500193Q146.89133511766974 92.27273214457946 151.87602478780863 97.36226134500384L165.8661651234568 111.4905251736111Q173.60641034915125 119.10607934268903 179.1140643084491 129.04889374156056Q184.62171826774693 138.99170814043208 184.62171826774693 153.28918740354936Q184.62171826774693 163.50800305025075 180.69480492862655 171.51029851466046Q176.76789158950618 179.5125939790702 169.70962094907406 184.0205928698881Q162.65135030864198 188.528591760706 153.12740162037036 188.528591760706Z" fill="currentColor"/></svg>
+  </a>
+  <div class="actions">
+    <div class="lang" role="group" aria-label="Język / Language">
+      <button type="button" id="lang-pl" data-lang="pl" aria-pressed="true">PL</button>
+      <button type="button" id="lang-en" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+    <a class="cta-sm" href="#kontakt" data-i18n="navCta">Porozmawiajmy</a>
+  </div>
+</header>
+
+<nav class="rail" aria-label="Rozdziały">
+  <button type="button" data-go="0"><span data-i18n="r0">Detal</span><i></i></button>
+  <button type="button" data-go="1"><span data-i18n="r1">Zrozumienie</span><i></i></button>
+  <button type="button" data-go="2"><span data-i18n="r2">Wzór</span><i></i></button>
+  <button type="button" data-go="3"><span data-i18n="r3">Co robimy</span><i></i></button>
+  <button type="button" data-go="7"><span data-i18n="r4">Zespół</span><i></i></button>
+  <button type="button" data-go="8"><span data-i18n="r5">Kontakt</span><i></i></button>
+</nav>
+
+<div class="hud" aria-hidden="true">
+  <span>X <b id="hx">0.0</b></span><span>Y <b id="hy">0.0</b></span><span>Z <b id="hz">0.0</b></span>
+  <span><b id="hi">01</b>/06</span>
+</div>
+
+<main>
+  <section id="start" data-scene>
+    <div class="text">
+      <p class="eyebrow" data-i18n="e0">Detal Studio · studio kreatywne</p>
+      <h1 data-i18n="h0">Różnicę robi <em>detal</em>.</h1>
+      <p class="lead" data-i18n="p0"></p>
+      <div class="hint" data-i18n="hint">Przewiń</div>
+    </div>
+  </section>
+
+  <section id="zrozumienie" class="chapter" data-scene>
+    <div class="text pos-r" style="--top:28vh">
+      <p class="eyebrow" data-i18n="e1"></p>
+      <h2 data-i18n="h1"></h2>
+      <p data-i18n="p1"></p>
+      <p data-i18n="p1b"></p>
+    </div>
+  </section>
+
+  <section id="wzor" class="chapter" data-scene>
+    <div class="text side" style="--top:40vh">
+      <p class="eyebrow" data-i18n="e2"></p>
+      <h2 data-i18n="h2"></h2>
+      <p data-i18n="p2"></p>
+    </div>
+  </section>
+
+  <section id="calosc" class="chapter" data-scene>
+    <div class="text pos-c" style="--top:30vh">
+      <p class="eyebrow" data-i18n="e3"></p>
+      <h2 data-i18n="h3"></h2>
+    </div>
+  </section>
+
+  <section id="strategia" class="chapter" data-scene>
+    <div class="text area it" style="--top:20vh">
+      <span class="num">01</span>
+      <h2 data-i18n="a1"></h2>
+      <p data-i18n="a1p"></p>
+    </div>
+  </section>
+
+  <section id="marka" class="chapter" data-scene>
+    <div class="text area pos-r" style="--top:14vh">
+      <span class="num">02</span>
+      <h2 data-i18n="a2"></h2>
+      <p data-i18n="a2p"></p>
+    </div>
+  </section>
+
+  <section id="komunikacja" class="chapter" data-scene>
+    <div class="text area it" style="--top:44vh">
+      <span class="num">03</span>
+      <h2 data-i18n="a3"></h2>
+      <p data-i18n="a3p"></p>
+    </div>
+  </section>
+
+  <section id="zespol" class="chapter" data-scene>
+    <div class="text pos-r" style="--top:22vh">
+      <p class="eyebrow" data-i18n="e4"></p>
+      <h2 data-i18n="h4"></h2>
+      <p data-i18n="p4"></p>
+      <p class="roles" data-i18n="roles"></p>
+      <p data-i18n="p4b"></p>
+    </div>
+  </section>
+
+  <section id="kontakt" data-scene>
+    <div class="text" id="contact-box">
+      <p class="eyebrow" data-i18n="e5"></p>
+      <h2 data-i18n="h5"></h2>
+      <p data-i18n="p5"></p>
+
+      <form id="brief" novalidate>
+        <fieldset>
+          <legend data-i18n="fTopic"></legend>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" id="t-strategy" name="topic" value="strategia"><span data-i18n="c1"></span></label>
+            <label class="chip"><input type="checkbox" id="t-brand" name="topic" value="marka"><span data-i18n="c2"></span></label>
+            <label class="chip"><input type="checkbox" id="t-web" name="topic" value="www"><span data-i18n="c3"></span></label>
+            <label class="chip"><input type="checkbox" id="t-campaign" name="topic" value="kampania"><span data-i18n="c4"></span></label>
+            <label class="chip"><input type="checkbox" id="t-other" name="topic" value="inne"><span data-i18n="c5"></span></label>
+          </div>
+        </fieldset>
+        <div class="row">
+          <div><label class="f" for="f-name" data-i18n="fName"></label><input type="text" id="f-name" name="name" autocomplete="name" required></div>
+          <div><label class="f" for="f-email" data-i18n="fEmail"></label><input type="email" id="f-email" name="email" autocomplete="email" required></div>
+        </div>
+        <div><label class="f" for="f-company" data-i18n="fCompany"></label><input type="text" id="f-company" name="company" autocomplete="organization"></div>
+        <div><label class="f" for="f-msg" data-i18n="fMsg"></label><textarea id="f-msg" name="message" data-i18n-ph="fMsgPh"></textarea></div>
+        <p class="err" id="f-err" role="alert" aria-live="polite"></p>
+        <div class="submit">
+          <button class="send" type="submit" data-i18n="send"></button>
+          <p class="alt"><span data-i18n="alt"></span> <a href="https://calendly.com/marcinraczynski/30-minutowe-spotkanie-1-na-1" target="_blank" rel="noopener" data-i18n="altLink"></a></p>
+        </div>
+      </form>
+
+      <div class="done" id="done">
+        <h3 data-i18n="doneH"></h3>
+        <p data-i18n="doneP"></p>
+        <p class="note" data-i18n="doneNote"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Detal Studio · 2026</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+  /* ---------- copy ---------- */
+  const dict = {
+    pl: {
+      navCta:"Porozmawiajmy", r0:"Detal", r1:"Zrozumienie", r2:"Wzór", r3:"Co robimy", r4:"Zespół", r5:"Kontakt",
+      e0:"Detal Studio · studio kreatywne",
+      h0:"Różnicę robi <em>detal</em>.",
+      p0:"Jesteśmy butikowym studiem kreatywnym. Prowadzimy marki od strategii, przez identyfikację, po komunikację. Na każdym etapie pilnujemy szczegółów, bo to one decydują o efekcie.",
+      hint:"Przewiń",
+      e1:"01 / Zrozumienie", h1:"Najpierw <em>słuchamy</em>.",
+      p1:"Zanim powstanie pierwszy szkic, poznajemy firmę, ludzi i rynek. Szukamy też tego, czego klient sam jeszcze nie nazwał.",
+      p1b:"Każda z tych rzeczy to osobny punkt. Żadnego nie pomijamy.",
+      e2:"02 / Wzór", h2:"Potem szukamy <em>wzoru</em>.",
+      p2:"Pojedyncze obserwacje niewiele znaczą. Układamy je tak długo, aż widać w nich porządek i jedną myśl, na której można budować.",
+      e3:"03 / Co robimy", h3:"Z jednej myśli powstaje <em>całość</em>.",
+      a1:"Strategia", a1p:"Pozycjonowanie, przekaz i plan działań. Wiemy, co powiedzieć i komu.",
+      a2:"Marka", a2p:"Identyfikacja wizualna, nazwa i ton. Jeden spójny wizerunek, od logo po ostatni plik.",
+      a3:"Komunikacja", a3p:"Strony www, kampanie 360, materiały i assety. Od pomysłu do publikacji, na czas.",
+      e4:"04 / Zespół", h4:"Zespół dobrany <em>do projektu</em>.",
+      p4:"Nie mamy działów, którym trzeba znaleźć zajęcie. Do każdego zlecenia dobieramy tylu specjalistów, ilu potrzeba.",
+      roles:"Stratedzy · Projektanci · Specjaliści · Deweloperzy",
+      p4b:"Ty masz jeden kontakt i jedną osobę odpowiedzialną za efekt.",
+      e5:"05 / Kontakt", h5:"Opowiedz nam o <em>swoim projekcie</em>.",
+      p5:"Odpowiadamy w ciągu jednego dnia roboczego.",
+      fTopic:"Czego dotyczy projekt?", c1:"Strategia", c2:"Marka", c3:"Strona www", c4:"Kampania", c5:"Coś innego",
+      fName:"Imię i nazwisko", fEmail:"E-mail", fCompany:"Firma (opcjonalnie)", fMsg:"Kilka słów o projekcie", fMsgPh:"Cel, termin, co już macie",
+      send:"Wyślij", alt:"Wolisz od razu porozmawiać?", altLink:"Umów 30 minut",
+      errName:"Podaj imię i nazwisko.", errEmail:"Podaj poprawny adres e-mail, żebyśmy mogli odpowiedzieć.",
+      doneH:"Dziękujemy.", doneP:"Wrócimy do Ciebie w ciągu jednego dnia roboczego.",
+      doneNote:"Prototyp: wysyłka formularza zostanie podłączona przy wdrożeniu."
+    },
+    en: {
+      navCta:"Let's talk", r0:"Detail", r1:"Understanding", r2:"Pattern", r3:"What we do", r4:"Team", r5:"Contact",
+      e0:"Detal Studio · creative studio",
+      h0:"The <em>detail</em> makes the difference.",
+      p0:"We are a boutique creative studio. We take brands from strategy, through identity, to communication. At every stage we watch the details, because they decide the result.",
+      hint:"Scroll",
+      e1:"01 / Understanding", h1:"First, we <em>listen</em>.",
+      p1:"Before the first sketch, we get to know the company, its people and its market. We also look for what the client hasn't put into words yet.",
+      p1b:"Each of these is a point of its own. We don't skip any of them.",
+      e2:"02 / Pattern", h2:"Then we find the <em>pattern</em>.",
+      p2:"Single observations mean little. We arrange them until there is order in them, and one idea to build on.",
+      e3:"03 / What we do", h3:"One idea becomes the <em>whole</em>.",
+      a1:"Strategy", a1p:"Positioning, messaging and a plan of action. We know what to say, and to whom.",
+      a2:"Brand", a2p:"Visual identity, naming and tone of voice. One consistent image, from the logo to the last file.",
+      a3:"Communication", a3p:"Websites, 360 campaigns, materials and assets. From idea to launch, on time.",
+      e4:"04 / Team", h4:"A team built <em>around the project</em>.",
+      p4:"We have no departments to keep busy. For each project we bring in as many specialists as it takes.",
+      roles:"Strategists · Designers · Specialists · Developers",
+      p4b:"You get one contact and one person accountable for the result.",
+      e5:"05 / Contact", h5:"Tell us about <em>your project</em>.",
+      p5:"We reply within one working day.",
+      fTopic:"What is it about?", c1:"Strategy", c2:"Brand", c3:"Website", c4:"Campaign", c5:"Something else",
+      fName:"Full name", fEmail:"Email", fCompany:"Company (optional)", fMsg:"A few words about the project", fMsgPh:"Goal, timing, what you already have",
+      send:"Send", alt:"Rather talk right away?", altLink:"Book 30 minutes",
+      errName:"Please enter your name.", errEmail:"Please enter a valid email address so we can reply.",
+      doneH:"Thank you.", doneP:"We'll get back to you within one working day.",
+      doneNote:"Prototype: form delivery will be connected at launch."
+    }
+  };
+
+  let lang = "pl";
+  try { const s = localStorage.getItem("ds-lang"); if (s === "pl" || s === "en") lang = s; } catch (e) {}
+
+  // Polish typesetting: bind 1–2 letter words to the next word
+  const nb = s => {
+    if (lang !== "pl") return s;
+    for (let k = 0; k < 2; k++) s = s.replace(/(^|[\s>(;])([A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż0-9]{1,2})\s+(?=[^\s<])/g, "$1$2&nbsp;");
+    return s;
+  };
+
+  function applyLang() {
+    const d = dict[lang];
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.innerHTML = nb(d[el.dataset.i18n]); });
+    document.querySelectorAll("[data-i18n-ph]").forEach(el => { el.placeholder = d[el.dataset.i18nPh]; });
+    document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    document.getElementById("f-err").textContent = "";
+  }
+  document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => {
+    lang = b.dataset.lang;
+    try { localStorage.setItem("ds-lang", lang); } catch (e) {}
+    applyLang(); measure();
+  }));
+
+  /* ---------- form ---------- */
+  document.getElementById("brief").addEventListener("submit", e => {
+    e.preventDefault();
+    const err = document.getElementById("f-err");
+    const name = document.getElementById("f-name"), email = document.getElementById("f-email");
+    if (!name.value.trim()) { err.textContent = dict[lang].errName; name.focus(); return; }
+    if (!email.value.trim() || !email.checkValidity()) { err.textContent = dict[lang].errEmail; email.focus(); return; }
+    err.textContent = "";
+    document.getElementById("contact-box").classList.add("sent");
+  });
+
+  /* ---------- scroll → story position ---------- */
+  const sections = [...document.querySelectorAll("[data-scene]")];
+  const texts = sections.map(s => s.querySelector(".text"));
+  const NS = sections.length, LAST = NS - 1;
+  const RM = matchMedia("(prefers-reduced-motion: reduce)");
+  const clamp = v => v < 0 ? 0 : v > 1 ? 1 : v;
+  const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+  let tops = [];
+  function measure() { tops = sections.map(s => s.offsetTop); }
+  function target() {
+    const y = scrollY, vh = innerHeight;
+    let s = 0;
+    for (let i = 1; i < tops.length; i++) {
+      const a = tops[i] - vh * 0.95, b = tops[i] - vh * 0.3;
+      s += clamp((y - a) / (b - a));
+    }
+    return s;
+  }
+  applyLang(); measure();
+
+  const railBtns = [...document.querySelectorAll(".rail button")];
+  const railOf = [0, 1, 2, 3, 3, 3, 3, 4, 5];
+  railBtns.forEach(b => b.addEventListener("click", () => sections[+b.dataset.go].scrollIntoView({behavior: RM.matches ? "auto" : "smooth"})));
+  const hud = document.querySelector(".hud"), hx = document.getElementById("hx"), hy = document.getElementById("hy"), hz = document.getElementById("hz"), hi = document.getElementById("hi");
+  let lastRail = -1;
+  function ui(s, head) {
+    for (let k = 0; k < LAST; k++) { const w = 1 - Math.abs(s - k); texts[k].style.opacity = innerWidth < 860 ? clamp((w - 0.55) * 5) : clamp(w * 2.4 - 0.25); }
+    const r = railOf[Math.min(LAST, Math.round(s))];
+    if (r !== lastRail) { lastRail = r; hi.textContent = "0" + (r + 1); railBtns.forEach((b, i) => b.classList.toggle("on", i === r)); }
+    hud.style.opacity = s > LAST - 0.5 ? 0 : 1;
+    if (head) { hx.textContent = head.x.toFixed(1); hy.textContent = head.y.toFixed(1); hz.textContent = (-head.z).toFixed(1); }
+  }
+
+  /* ---------- 3D stage ---------- */
+  const cv = document.getElementById("stage");
+  let renderer;
+  try {
+    if (!window.THREE) throw new Error("no three");
+    renderer = new THREE.WebGLRenderer({canvas: cv, antialias: true});
+  } catch (e) {
+    cv.style.display = "none";
+    const loop = () => { ui(target(), null); requestAnimationFrame(loop); };
+    addEventListener("resize", measure); loop();
+    return;
+  }
+  const css = getComputedStyle(document.documentElement);
+  const INK = new THREE.Color(css.getPropertyValue("--ink").trim());
+  const PINK = new THREE.Color(css.getPropertyValue("--pink").trim());
+  const PAPER = new THREE.Color(css.getPropertyValue("--paper").trim());
+  renderer.setClearColor(INK, 1);
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(INK.getHex(), 0.034);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+
+  function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+  const rnd = mulberry32(7);
+
+  // stations the line passes through, and the bends between them
+  const ST = [V(0,0,0), V(6,1,-10), V(-4,4,-22), V(2,10,-32), V(9,8,-42), V(0,3,-52), V(-9,7,-62), V(0,12,-76), V(0,2,-92)];
+  const MID = [V(4,-2.5,-4), V(2,5.5,-15), V(-7,8,-28), V(8,12.5,-36), V(6,2,-48), V(-5,1.5,-58), V(-8,13,-70), V(5,8,-85)];
+  const pathPts = [];
+  ST.forEach((p, i) => { pathPts.push(p); if (MID[i]) pathPts.push(MID[i]); });
+  const path = new THREE.CatmullRomCurve3(pathPts, false, "catmullrom", 0.5);
+  const LEN = path.getLengths(600);
+  const fracAt = t => { const x = clamp(t) * 600, i = Math.min(599, Math.floor(x)); return (LEN[i] + (LEN[i+1] - LEN[i]) * (x - i)) / LEN[600]; };
+  const tgtCurve = new THREE.CatmullRomCurve3(ST, false, "catmullrom", 0.5);
+
+  // camera: where it stands relative to each station, and where the object lands on screen (fraction of viewport)
+  const OFF = [V(0,0,3.4), V(-2,1,8.5), V(6,3.5,7.5), V(-3,-4,11), V(-4.5,1,5.8), V(5,-1.5,6.2), V(0,5,6.8), V(6,2.5,9.5), V(0,0.5,9.5)];
+  const SHIFT = [[.2,0],[-.2,0],[.2,.1],[0,.05],[.22,0],[-.22,0],[.14,.16],[-.2,0],[.24,0]];
+  let camCurve, mobile, W, H;
+
+  const dotTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 64;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(32,32,0,32,32,32);
+    gr.addColorStop(0,"rgba(255,255,255,1)"); gr.addColorStop(.45,"rgba(255,255,255,1)"); gr.addColorStop(1,"rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0,0,64,64); return new THREE.CanvasTexture(c);
+  })();
+  const glowTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), gr = g.createRadialGradient(64,64,0,64,64,64);
+    gr.addColorStop(0,"rgba(255,255,255,.55)"); gr.addColorStop(.3,"rgba(255,255,255,.16)"); gr.addColorStop(1,"rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c);
+  })();
+  const lineMat = (o, col) => new THREE.LineBasicMaterial({color: col || PAPER, transparent: true, opacity: o});
+  const ptsMat = (size, o, col) => new THREE.PointsMaterial({color: col || PAPER, size, map: dotTex, transparent: true, opacity: o, depthWrite: false, sizeAttenuation: true});
+  const circle = (r, n) => { const a = []; for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; a.push(Math.cos(t) * r, 0, Math.sin(t) * r); } const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); return g; };
+
+  // dust for depth
+  {
+    const a = [];
+    for (let i = 0; i < 1800; i++) a.push(-28 + rnd() * 56, -12 + rnd() * 38, 8 - rnd() * 112);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+    scene.add(new THREE.Points(g, ptsMat(0.05, 0.45)));
+  }
+
+  // the line and the detail at its tip
+  const TUBE = 1100;
+  const tube = new THREE.Mesh(new THREE.TubeGeometry(path, TUBE, 0.02, 6, false), new THREE.MeshBasicMaterial({color: PINK}));
+  scene.add(tube);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 48, 32), new THREE.MeshBasicMaterial({color: PINK, fog: false}));
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({map: glowTex, color: PINK, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false}));
+  scene.add(head, glow);
+  const halo = new THREE.Group();
+  [[0.95, 0.5, 0.2], [1.3, -0.9, 0.6], [1.75, 1.3, -0.4]].forEach(([r, rx, rz]) => { const l = new THREE.LineLoop(circle(r, 96), lineMat(0.35)); l.rotation.set(rx, 0, rz); halo.add(l); });
+  scene.add(halo);
+
+  // 1 → 2: scattered observations settle into a lattice
+  const NP = 216, G = 6;
+  const cloud = new Float32Array(NP * 3), lattice = new Float32Array(NP * 3), pDelay = new Float32Array(NP), pPhase = new Float32Array(NP);
+  const pPos = new Float32Array(NP * 3);
+  {
+    const e = new THREE.Euler(0.5, 0.65, 0.2), v = new THREE.Vector3();
+    let n = 0;
+    for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) for (let k = 0; k < G; k++, n++) {
+      let a, b, c; do { a = rnd()*2-1; b = rnd()*2-1; c = rnd()*2-1; } while (a*a + b*b + c*c > 1);
+      cloud[3*n] = a * 7; cloud[3*n+1] = b * 4.6; cloud[3*n+2] = c * 5.5;
+      v.set((i - 2.5) * 0.85, (j - 2.5) * 0.85, (k - 2.5) * 0.85).applyEuler(e).add(ST[2]);
+      lattice[3*n] = v.x; lattice[3*n+1] = v.y; lattice[3*n+2] = v.z;
+      pDelay[n] = rnd() * 0.3; pPhase[n] = rnd() * 6.28;
+    }
+  }
+  const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+  const pts = new THREE.Points(pGeo, ptsMat(0.13, 0.95)); pts.frustumCulled = false; scene.add(pts);
+  const pairs = [];
+  { const id = (i, j, k) => (i * G + j) * G + k;
+    for (let i = 0; i < G; i++) for (let j = 0; j < G; j++) for (let k = 0; k < G; k++) {
+      if (i < G-1) pairs.push(id(i,j,k), id(i+1,j,k)); if (j < G-1) pairs.push(id(i,j,k), id(i,j+1,k)); if (k < G-1) pairs.push(id(i,j,k), id(i,j,k+1));
+    } }
+  const lPos = new Float32Array(pairs.length * 3);
+  const lGeo = new THREE.BufferGeometry(); lGeo.setAttribute("position", new THREE.BufferAttribute(lPos, 3));
+  const latLines = new THREE.LineSegments(lGeo, lineMat(0)); latLines.frustumCulled = false; scene.add(latLines);
+
+  // 4: strategy – nested geodesic shells with axes
+  const strat = new THREE.Group(); strat.position.copy(ST[4]); scene.add(strat);
+  const sOuter = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.75, 1)), lineMat(0.4));
+  const sMid = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.15, 0)), lineMat(0.75));
+  const sIn = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.55, 0)), lineMat(0.9, PINK));
+  const sPts = new THREE.Points(new THREE.IcosahedronGeometry(1.75, 1), ptsMat(0.09, 1));
+  sOuter.add(sPts);
+  const sAxes = new THREE.Group();
+  { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute([-3.2,0,0, 3.2,0,0, 0,-3.2,0, 0,3.2,0, 0,0,-3.2, 0,0,3.2], 3)); sAxes.add(new THREE.LineSegments(g, lineMat(0.22))); }
+  const sRing = new THREE.LineLoop(circle(2.45, 128), lineMat(0.3)); sRing.rotation.set(1.1, 0, 0.3);
+  strat.add(sOuter, sMid, sIn, sAxes, sRing);
+
+  // 5: brand – one frame repeated into a twisting column
+  const brand = new THREE.Group(); brand.position.copy(ST[5]); brand.rotation.set(0.35, 0, -0.45); scene.add(brand);
+  const frames = [];
+  { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute([-1,0,-1, 1,0,-1, 1,0,1, -1,0,1], 3));
+    const NF = 44;
+    for (let i = 0; i < NF; i++) {
+      const u = i / (NF - 1), f = new THREE.LineLoop(g, lineMat(i % 4 === 0 ? 0.8 : 0.3));
+      f.position.y = (u - 0.5) * 4.8; f.scale.setScalar(1.05);
+      frames.push(f); brand.add(f);
+    }
+    const ag = new THREE.BufferGeometry(); ag.setAttribute("position", new THREE.Float32BufferAttribute([0,-3,0, 0,3,0], 3));
+    brand.add(new THREE.LineSegments(ag, lineMat(0.25)));
+  }
+
+  // 6: communication – ripples spreading from one point
+  const comm = new THREE.Group(); comm.position.copy(ST[6]); comm.rotation.set(0.15, 0, 0.12); scene.add(comm);
+  const rings = [];
+  { const NR = 26, SEG = 120;
+    for (let i = 0; i < NR; i++) {
+      const r = 0.3 + i * 0.15 + i * i * 0.0035, arr = new Float32Array(SEG * 3);
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(arr, 3));
+      const l = new THREE.LineLoop(g, lineMat(0.7 - 0.55 * i / NR)); l.frustumCulled = false;
+      rings.push({r, arr, g, SEG}); comm.add(l);
+    }
+    const a = []; for (let i = 0; i < 160; i++) { const t = rnd() * 6.28, r = 0.5 + rnd() * 4.4; a.push(Math.cos(t) * r, (rnd() - .3) * 1.8, Math.sin(t) * r); }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+    comm.add(new THREE.Points(g, ptsMat(0.06, 0.8)));
+  }
+
+  // 7: team – specialists in orbit around one centre
+  const team = new THREE.Group(); team.position.copy(ST[7]); scene.add(team);
+  const orbits = [], sats = [];
+  [[2.1, 0.5, 0.2], [3.0, -0.7, 0.5], [3.9, 1.25, -0.35]].forEach(([r, rx, rz]) => {
+    const o = new THREE.Group(); o.rotation.set(rx, 0, rz); o.add(new THREE.LineLoop(circle(r, 160), lineMat(0.28))); o.userData.r = r; team.add(o); orbits.push(o);
+  });
+  [new THREE.TetrahedronGeometry(0.36), new THREE.BoxGeometry(0.46, 0.46, 0.46), new THREE.OctahedronGeometry(0.36), new THREE.DodecahedronGeometry(0.34),
+   new THREE.IcosahedronGeometry(0.36), new THREE.ConeGeometry(0.3, 0.56, 5), new THREE.TorusGeometry(0.26, 0.1, 6, 14), new THREE.CylinderGeometry(0.24, 0.24, 0.5, 6)]
+  .forEach((g, i) => {
+    const m = new THREE.LineSegments(new THREE.EdgesGeometry(g), lineMat(0.95)), o = orbits[i % 3];
+    m.userData = {a: i * 2.4, v: (0.12 + 0.05 * (i % 4)) * (i % 2 ? -1 : 1), r: o.userData.r};
+    o.add(m); sats.push(m);
+  });
+  const spokePos = new Float32Array(sats.length * 6);
+  const spokeGeo = new THREE.BufferGeometry(); spokeGeo.setAttribute("position", new THREE.BufferAttribute(spokePos, 3));
+  const spokes = new THREE.LineSegments(spokeGeo, lineMat(0.3, PINK)); spokes.frustumCulled = false; team.add(spokes);
+  const core = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(0.75, 1)), lineMat(0.35)); team.add(core);
+  { const a = []; for (let i = 0; i < 260; i++) { const t = rnd() * 6.28, p = Math.acos(rnd() * 2 - 1), r = 4.4 + rnd() * 1.6; a.push(Math.sin(p) * Math.cos(t) * r, Math.cos(p) * r, Math.sin(p) * Math.sin(t) * r); }
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3)); core.userData.shell = new THREE.Points(g, ptsMat(0.06, 0.7)); team.add(core.userData.shell); }
+
+  // 8: matter – everything gathered into one living mass
+  const MN = 14000;
+  const mGeo = new THREE.BufferGeometry();
+  { const p = new Float32Array(MN * 3), r = new Float32Array(MN);
+    for (let i = 0; i < MN; i++) { const y = 1 - 2 * (i + .5) / MN, q = Math.sqrt(1 - y*y), t = i * 2.39996323; p[3*i] = Math.cos(t) * q; p[3*i+1] = y; p[3*i+2] = Math.sin(t) * q; r[i] = rnd(); }
+    mGeo.setAttribute("position", new THREE.BufferAttribute(p, 3)); mGeo.setAttribute("aR", new THREE.BufferAttribute(r, 1)); }
+  const mMat = new THREE.ShaderMaterial({
+    uniforms: {uT: {value: 0}, uPx: {value: 10}, uOp: {value: 0}, uA: {value: PINK}, uB: {value: PAPER}},
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: `
+      uniform float uT; uniform float uPx; uniform float uOp;
+      attribute float aR; varying float vA; varying float vMix;
+      void main(){
+        vec3 p = position;
+        float n = sin(p.x*1.9+uT*.7)*sin(p.y*2.3+uT*.9)*sin(p.z*2.1-uT*.6);
+        float n2 = sin(p.x*4.3-uT*1.1+p.y*3.1)*sin(p.z*4.7+uT*.8);
+        float n3 = sin(p.y*8.+uT*1.3+p.x*6.)*sin(p.z*7.-uT);
+        float d = 1.0 + .36*n + .14*n2 + .05*n3;
+        p *= d * mix(.2, 1., pow(aR, .4)) * 2.7;
+        vec4 mv = modelViewMatrix * vec4(p, 1.);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = uPx * (.5 + aR) / -mv.z;
+        vMix = smoothstep(.75, 1.3, d);
+        vA = uOp * (.3 + .7*aR);
+      }`,
+    fragmentShader: `
+      uniform vec3 uA; uniform vec3 uB; varying float vA; varying float vMix;
+      void main(){
+        float r = length(gl_PointCoord - .5);
+        if (r > .5) discard;
+        gl_FragColor = vec4(mix(uB, uA, vMix), smoothstep(.5, .15, r) * vA);
+      }`
+  });
+  const matter = new THREE.Points(mGeo, mMat); matter.position.copy(ST[8]); matter.frustumCulled = false; scene.add(matter);
+
+  /* ---------- layout + loop ---------- */
+  function resize() {
+    W = innerWidth; H = innerHeight; mobile = W < 860;
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(W, H, false);
+    camera.aspect = W / H; camera.fov = mobile ? 58 : 45; camera.updateProjectionMatrix();
+    camCurve = new THREE.CatmullRomCurve3(ST.map((p, i) => p.clone().add(OFF[i].clone().multiplyScalar(mobile ? 1.25 : 1))), false, "catmullrom", 0.5);
+    mMat.uniforms.uPx.value = H * renderer.getPixelRatio() * 0.022;
+    measure();
+  }
+  let mx = 0, my = 0, pmx = 0, pmy = 0;
+  addEventListener("pointermove", e => { if (e.pointerType === "mouse") { mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; } });
+
+  const tmp = new THREE.Vector3(), tgt = new THREE.Vector3(), hp = new THREE.Vector3();
+  let s = 0;
+  function frame(ms) {
+    const rm = RM.matches, t = rm ? 0 : ms * 0.001;
+    const stv = target();
+    s += (stv - s) * (rm ? 1 : 0.085);
+    if (Math.abs(stv - s) < 1e-4) s = stv;
+    const u = s / LAST, k0 = Math.min(LAST - 1, Math.floor(s)), f = s - k0;
+    const near = k => Math.max(0, 1 - Math.abs(s - k));
+
+    // line + detail
+    path.getPoint(u, hp);
+    tube.geometry.setDrawRange(0, Math.max(1, Math.floor(fracAt(u) * TUBE)) * 36);
+    const hs = 1 - 0.74 * ease(clamp(s));
+    head.position.copy(hp); head.scale.setScalar(hs * (rm ? 1 : 1 + 0.02 * Math.sin(t * 2)));
+    glow.position.copy(hp); glow.scale.setScalar(2.6 * hs + 0.7);
+    halo.rotation.set(t * 0.15, t * 0.22, 0);
+
+    // cloud → lattice
+    if (s < 3.2) {
+      const bloom = ease(clamp(s / 0.9)), drift = rm ? 0 : 0.12;
+      for (let i = 0; i < NP; i++) {
+        const m = ease(clamp((s - 1 - pDelay[i]) / 0.7)), w = (1 - m) * drift;
+        const cx = ST[1].x + cloud[3*i] * bloom + Math.sin(t * .5 + pPhase[i]) * w, cy = ST[1].y + cloud[3*i+1] * bloom + Math.cos(t * .6 + pPhase[i]) * w, cz = ST[1].z + cloud[3*i+2] * bloom;
+        pPos[3*i] = cx + (lattice[3*i] - cx) * m; pPos[3*i+1] = cy + (lattice[3*i+1] - cy) * m; pPos[3*i+2] = cz + (lattice[3*i+2] - cz) * m;
+      }
+      pGeo.attributes.position.needsUpdate = true;
+      pts.material.opacity = 0.95 * clamp(s / 0.5);
+      const lo = clamp((s - 1.25) / 0.6);
+      latLines.material.opacity = 0.34 * lo;
+      if (lo > 0) {
+        for (let i = 0; i < pairs.length; i++) { const p = pairs[i] * 3; lPos[3*i] = pPos[p]; lPos[3*i+1] = pPos[p+1]; lPos[3*i+2] = pPos[p+2]; }
+        lGeo.attributes.position.needsUpdate = true;
+      }
+    }
+
+    // solids
+    if (s > 2.2 && s < 5.6) {
+      sOuter.rotation.set(t * 0.07, t * 0.11, 0); sMid.rotation.set(-t * 0.16, t * 0.1, t * 0.05); sIn.rotation.set(t * 0.3, -t * 0.4, 0);
+      sAxes.rotation.set(0.4, t * 0.05, 0.2); sRing.rotation.y = t * 0.2;
+    }
+    if (s > 3.4 && s < 6.6) {
+      const tw = 0.05 + (rm ? 0 : 0.03 * Math.sin(t * 0.45));
+      for (let i = 0; i < frames.length; i++) frames[i].rotation.y = (i - frames.length / 2) * tw + t * 0.12;
+    }
+    if (s > 4.6 && s < 7.6) {
+      for (const r of rings) {
+        for (let j = 0; j < r.SEG; j++) {
+          const a = j / r.SEG * 6.2832, rr = r.r * (1 + 0.035 * Math.sin(a * 3 + t * 0.7 + r.r));
+          r.arr[3*j] = Math.cos(a) * rr; r.arr[3*j+2] = Math.sin(a) * rr;
+          r.arr[3*j+1] = 0.42 * Math.sin(r.r * 2.3 - t * 1.5 + Math.sin(a * 2) * 0.5) * (1.1 - r.r / 6);
+        }
+        r.g.attributes.position.needsUpdate = true;
+      }
+      comm.rotation.y = t * 0.05;
+    }
+    if (s > 5.6) {
+      team.rotation.y = t * 0.04;
+      core.rotation.set(t * 0.1, t * 0.14, 0); core.userData.shell.rotation.y = -t * 0.03;
+      team.updateMatrixWorld();
+      sats.forEach((m, i) => {
+        const a = m.userData.a + t * m.userData.v;
+        m.position.set(Math.cos(a) * m.userData.r, 0, Math.sin(a) * m.userData.r);
+        m.rotation.set(t * 0.4 + i, t * 0.3, 0);
+        m.parent.updateMatrixWorld();
+        m.getWorldPosition(tmp); team.worldToLocal(tmp);
+        spokePos[6*i+3] = tmp.x; spokePos[6*i+4] = tmp.y; spokePos[6*i+5] = tmp.z;
+      });
+      spokeGeo.attributes.position.needsUpdate = true;
+    }
+    mMat.uniforms.uT.value = rm ? 2 : t * 0.5;
+    mMat.uniforms.uOp.value = 0.85 * clamp((s - 6.4) / 1.2);
+    matter.rotation.y = t * 0.06;
+    matter.visible = s > 6.4;
+
+    // camera
+    camCurve.getPoint(u, camera.position);
+    tgtCurve.getPoint(u, tgt);
+    if (!rm) { pmx += (mx - pmx) * 0.05; pmy += (my - pmy) * 0.05; camera.position.x += pmx * 0.9; camera.position.y -= pmy * 0.6; }
+    camera.lookAt(tgt);
+    const e = ease(f), a = SHIFT[k0], b = SHIFT[k0 + 1];
+    const ox = mobile ? 0 : a[0] + (b[0] - a[0]) * e, oy = mobile ? 0.24 : a[1] + (b[1] - a[1]) * e;
+    camera.setViewOffset(W, H, -ox * W, oy * H, W, H);
+
+    renderer.render(scene, camera);
+    ui(s, hp);
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  addEventListener("resize", resize);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
