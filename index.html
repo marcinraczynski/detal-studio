@@ -71,7 +71,7 @@ header{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;align-items:c
 
 main{position:relative;z-index:1}
 section{padding:0 var(--gutter)}
-.chapter{min-height:150vh}
+.chapter{min-height:190vh}
 .text{position:sticky;top:var(--top,24vh);max-width:min(32rem,42vw);padding:12px 0}
 .pos-r{margin-left:auto;margin-right:clamp(0px,9vw,9rem)}
 .pos-c{margin-left:auto;margin-right:auto;max-width:min(60rem,86vw);text-align:center}
@@ -90,7 +90,7 @@ p{margin:0 0 14px;color:#cdc5c2}
 .hint::after{content:"";width:1px;height:34px;background:linear-gradient(var(--pink),transparent)}
 
 /* varied text treatments */
-#calosc{min-height:125vh}
+#calosc{min-height:160vh}
 #calosc h2{font-size:clamp(3rem,8.4vw,8.6rem);line-height:.94;margin:0}
 .area .num{display:block;font:400 11px var(--f-mono);letter-spacing:.16em;color:var(--pink);margin-bottom:10px}
 .area h2{font-size:clamp(3.4rem,8vw,8rem);line-height:.9;margin-bottom:22px}
@@ -423,7 +423,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
   const hud = document.querySelector(".hud"), hx = document.getElementById("hx"), hy = document.getElementById("hy"), hz = document.getElementById("hz"), hi = document.getElementById("hi");
   let lastRail = -1;
   function ui(s, head) {
-    for (let k = 0; k < LAST; k++) { const w = 1 - Math.abs(s - k); texts[k].style.opacity = innerWidth < 860 ? clamp((w - 0.55) * 5) : clamp(w * 2.4 - 0.25); }
+    for (let k = 0; k < LAST; k++) { const w = 1 - Math.abs(s - k); /* a text is fully gone before the next one starts to appear */ texts[k].style.opacity = innerWidth < 860 ? clamp((w - 0.55) * 5) : clamp((w - 0.55) * 4); }
     const r = railOf[Math.min(LAST, Math.round(s))];
     if (r !== lastRail) { lastRail = r; hi.textContent = "0" + (r + 1); railBtns.forEach((b, i) => b.classList.toggle("on", i === r)); }
     hud.style.opacity = s > LAST - 0.5 ? 0 : 1;
