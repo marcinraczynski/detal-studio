@@ -135,10 +135,23 @@ input::placeholder,textarea::placeholder{color:#5f565a}
 .consent a{color:inherit;text-underline-offset:3px}
 .consent a:hover{color:var(--paper)}
 .err{color:#ff7fb3;font-size:14px;min-height:1.4em;margin:-8px 0 0}
-.done{display:none;margin-top:30px;padding:26px 0;border-top:1px solid var(--pink)}
-.done h3{font-size:2.2rem;margin-bottom:8px}
-.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
-.send[disabled]{opacity:.6;cursor:default}
+.done{display:none;outline:none}
+.done .lead{margin-bottom:34px}
+.trace{position:relative;height:9px;margin-bottom:30px}
+.trace::before{content:"";position:absolute;left:0;right:0;top:4px;height:1px;background:var(--pink);transform-origin:left}
+.trace::after{content:"";position:absolute;top:0;left:calc(100% - 9px);width:9px;height:9px;border-radius:50%;background:var(--pink);box-shadow:0 0 18px 4px rgba(226,51,127,.45)}
+.sent>h2,.sent>p:not(.eyebrow){display:none}
+@media (prefers-reduced-motion:no-preference){
+  .sent .done>*{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+  .sent .done>p.lead{animation-delay:.12s}
+  .sent .done>.alt{animation-delay:.9s}
+  .sent .trace{animation:none}
+  .sent .trace::before{animation:draw 1.1s .25s cubic-bezier(.4,0,.2,1) both}
+  .sent .trace::after{animation:run 1.1s .25s cubic-bezier(.4,0,.2,1) both}
+}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes draw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes run{from{left:0}to{left:calc(100% - 9px)}}
 .sent form{display:none}
 .sent .done{display:block}
 
@@ -298,9 +311,11 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
         </div>
       </form>
 
-      <div class="done" id="done">
-        <h3 data-i18n="doneH"></h3>
-        <p data-i18n="doneP"></p>
+      <div class="done" id="done" tabindex="-1" role="status">
+        <h2 data-i18n="doneH"></h2>
+        <p class="lead" data-i18n="doneP"></p>
+        <div class="trace" aria-hidden="true"></div>
+        <p class="alt"><span data-i18n="alt"></span> <a href="https://calendly.com/marcinraczynski/30-minutowe-spotkanie-1-na-1" target="_blank" rel="noopener" data-i18n="altLink"></a></p>
       </div>
     </div>
   </section>
@@ -345,7 +360,7 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
       ckText:"Używamy Google Analytics, żeby wiedzieć, ile osób odwiedza stronę. Zgadzasz się na pliki cookie do statystyk?", ckNo:"Nie", ckYes:"Zgadzam się",
       send:"Wyślij", alt:"Wolisz od razu porozmawiać?", altLink:"Umów 30 minut",
       errName:"Podaj imię i nazwisko.", errEmail:"Podaj poprawny adres e-mail, żebyśmy mogli odpowiedzieć.",
-      doneH:"Dziękujemy.", doneP:"Wrócimy do Ciebie w ciągu jednego dnia roboczego.",
+      doneH:"Dziękujemy, <em>wiadomość wysłana</em>.", doneP:"Wrócimy do Ciebie w ciągu jednego dnia roboczego.",
       errSend:"Nie udało się wysłać wiadomości. Spróbuj ponownie albo napisz na marcin@detalstudio.pl.", sending:"Wysyłanie…"
     },
     en: {
@@ -375,12 +390,13 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
       ckText:"We use Google Analytics to see how many people visit the site. Do you accept cookies for statistics?", ckNo:"No", ckYes:"I agree",
       send:"Send", alt:"Rather talk right away?", altLink:"Book 30 minutes",
       errName:"Please enter your name.", errEmail:"Please enter a valid email address so we can reply.",
-      doneH:"Thank you.", doneP:"We'll get back to you within one working day.",
+      doneH:"Thank you, <em>message sent</em>.", doneP:"We'll get back to you within one working day.",
       errSend:"The message could not be sent. Please try again or write to marcin@detalstudio.pl.", sending:"Sending…"
     }
   };
 
   let lang = "pl";
+  let sentAt = 0; // when the form was sent; the particle cloud answers with a pulse
   try { const s = localStorage.getItem("ds-lang"); if (s === "pl" || s === "en") lang = s; } catch (e) {}
 
   // Polish typesetting: bind 1–2 letter words to the next word
@@ -445,7 +461,12 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
     btn.disabled = true; btn.textContent = dict[lang].sending;
     fetch("send.php", {method: "POST", body, headers: {Accept: "application/json"}})
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then(j => { if (!j || !j.ok) throw new Error("send"); document.getElementById("contact-box").classList.add("sent"); })
+      .then(j => {
+        if (!j || !j.ok) throw new Error("send");
+        document.getElementById("contact-box").classList.add("sent");
+        sentAt = performance.now();
+        document.getElementById("done").focus({preventScroll: true});
+      })
       .catch(() => { err.textContent = dict[lang].errSend; })
       .finally(() => { btn.disabled = false; btn.textContent = dict[lang].send; });
   });
@@ -617,30 +638,33 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
   const sRing = new THREE.LineLoop(circle(2.45, 128), lineMat(0.3)); sRing.rotation.set(1.1, 0, 0.3);
   strat.add(sOuter, sMid, sIn, sAxes, sRing);
 
-  // 5: brand – one mark, drawn as a ribbon of parallel strokes tied into a single knot
-  const brand = new THREE.Group(); brand.position.copy(ST[5]); brand.rotation.set(0.5, 0, -0.3); scene.add(brand);
-  const knot = new THREE.Group(); brand.add(knot);
-  { const NSTR = 9, SEG = 420, R = 1.5;
-    for (let i = 0; i < NSTR; i++) {
-      const r = 0.5 + i * 0.07, a = [];
-      for (let j = 0; j < SEG; j++) {
-        const t = j / SEG * Math.PI * 2, ph = 2 * t, th = 3 * t, q = R + r * Math.cos(th);
-        a.push(q * Math.cos(ph), r * Math.sin(th), q * Math.sin(ph));
-      }
-      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
-      const mid = i === (NSTR - 1) / 2;
-      knot.add(new THREE.LineLoop(g, lineMat(mid ? 0.95 : 0.22 + 0.5 * (1 - Math.abs(i - (NSTR - 1) / 2) / ((NSTR - 1) / 2)), mid ? PINK : PAPER)));
+  // 5: brand – square frames around a ring, turning a quarter on the way, so the four edges join into one continuous line
+  const brand = new THREE.Group(); brand.position.copy(ST[5]); brand.rotation.set(1.0, 0, -0.3); scene.add(brand);
+  const ring = new THREE.Group(); brand.add(ring);
+  const BR = 1.95, BA = 0.82, BN = 56;
+  const ringPt = (phi, k, out, o) => {
+    const al = phi / 4 + Math.PI / 4 + k * Math.PI / 2, q = BR + BA * Math.cos(al);
+    out[o] = q * Math.cos(phi); out[o + 1] = BA * Math.sin(al); out[o + 2] = q * Math.sin(phi);
+  };
+  { const sq = new Float32Array(BN * 4 * 2 * 3), nodes = new Float32Array(BN * 4 * 3), tmpA = [0, 0, 0];
+    for (let s2 = 0; s2 < BN; s2++) for (let k = 0; k < 4; k++) {
+      const phi = s2 / BN * Math.PI * 2;
+      ringPt(phi, k, sq, (s2 * 4 + k) * 6); ringPt(phi, k + 1, sq, (s2 * 4 + k) * 6 + 3);
+      ringPt(phi, k, nodes, (s2 * 4 + k) * 3);
     }
-    // construction lines, as on a logo sheet
-    const guide = new THREE.Group();
-    guide.add(new THREE.LineLoop(circle(R, 128), lineMat(0.16)), new THREE.LineLoop(circle(R + 1.12, 160), lineMat(0.22)));
-    const sq = new THREE.BufferGeometry(); const e = R + 1.12;
-    sq.setAttribute("position", new THREE.Float32BufferAttribute([-e,0,-e, e,0,-e, e,0,e, -e,0,e], 3));
-    guide.add(new THREE.LineLoop(sq, lineMat(0.14)));
-    const ax = new THREE.BufferGeometry(); ax.setAttribute("position", new THREE.Float32BufferAttribute([-e-.5,0,0, e+.5,0,0, 0,0,-e-.5, 0,0,e+.5], 3));
-    guide.add(new THREE.LineSegments(ax, lineMat(0.14)));
-    brand.add(guide);
+    const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(sq, 3));
+    ring.add(new THREE.LineSegments(g, lineMat(0.2)));
+    const edge = new Float32Array(BN * 4 * 3);
+    for (let m = 0; m < BN * 4; m++) ringPt(m / BN * Math.PI * 2, 0, edge, m * 3);
+    const eg = new THREE.BufferGeometry(); eg.setAttribute("position", new THREE.BufferAttribute(edge, 3));
+    ring.add(new THREE.LineLoop(eg, lineMat(0.6)));
+    const ng = new THREE.BufferGeometry(); ng.setAttribute("position", new THREE.BufferAttribute(nodes, 3));
+    ring.add(new THREE.Points(ng, ptsMat(0.085, 0.95)));
   }
+  // one frame travels through the whole form
+  const scanPos = new Float32Array(12);
+  const scanGeo = new THREE.BufferGeometry(); scanGeo.setAttribute("position", new THREE.BufferAttribute(scanPos, 3));
+  const scan = new THREE.LineLoop(scanGeo, lineMat(0.95, PINK)); scan.frustumCulled = false; ring.add(scan);
 
   // 6: communication – ripples spreading from one point
   const comm = new THREE.Group(); comm.position.copy(ST[6]); comm.rotation.set(0.15, 0, 0.12); scene.add(comm);
@@ -767,7 +791,10 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
       sAxes.rotation.set(0.4, t * 0.05, 0.2); sRing.rotation.y = t * 0.2;
     }
     if (s > 3.4 && s < 6.6) {
-      knot.rotation.set(rm ? 0 : 0.18 * Math.sin(t * 0.3), t * 0.14, 0);
+      ring.rotation.y = t * 0.08;
+      const sp = rm ? 0.6 : t * 0.22;
+      for (let k = 0; k < 4; k++) ringPt(sp, k, scanPos, k * 3);
+      scanGeo.attributes.position.needsUpdate = true;
     }
     if (s > 4.6 && s < 7.6) {
       for (const r of rings) {
@@ -797,6 +824,7 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
     mMat.uniforms.uT.value = rm ? 2 : t * 0.5;
     mMat.uniforms.uOp.value = 0.85 * clamp((s - 6.4) / 1.2);
     matter.rotation.y = t * 0.06;
+    matter.scale.setScalar(sentAt && !rm ? 1 + 0.22 * Math.exp(-(ms - sentAt) / 900) : 1);
     matter.visible = s > 6.4;
 
     // camera

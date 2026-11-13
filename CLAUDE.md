@@ -14,7 +14,7 @@ Jednostronicowa strona Detal Studio (butikowe studio kreatywne: strategia, marka
   3. Wzór – punkty układają się w siatkę
   4. „Z jednej myśli powstaje całość” – napis na środku
   5. Strategia – zagnieżdżone wielościany
-  6. Marka – węzeł ze wstęgi równoległych linii (znak), z liniami konstrukcyjnymi
+  6. Marka – pierścień z kwadratowych ramek skręcony o ćwierć obrotu (cztery krawędzie tworzą jedną ciągłą linię), z jedną różową ramką wędrującą po obwodzie
   7. Komunikacja – fale z jednego punktu
   8. Zespół – orbity z bryłami
   9. Kontakt – chmura cząstek („materia”) i formularz
