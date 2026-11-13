@@ -1,27 +1,25 @@
 <?php
-// Wysyłka formularza kontaktowego Detal Studio
-declare(strict_types=1);
-
+// Wysyłka formularza kontaktowego Detal Studio (zgodne ze starszymi wersjami PHP)
 const RECIPIENT = 'marcin@detalstudio.pl';
 const SENDER    = 'marcin@detalstudio.pl';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');
 
-function out(int $code, bool $ok): void {
+function out($code, $ok) {
     http_response_code($code);
-    echo json_encode(['ok' => $ok]);
+    echo json_encode(array('ok' => $ok));
     exit;
 }
-function field(string $key, int $max): string {
+function field($key, $max) {
     $v = isset($_POST[$key]) && is_string($_POST[$key]) ? trim($_POST[$key]) : '';
-    return mb_substr($v, 0, $max);
+    return function_exists('mb_substr') ? mb_substr($v, 0, $max, 'UTF-8') : substr($v, 0, $max);
 }
-function oneLine(string $v): string {
+function oneLine($v) {
     return trim(preg_replace('/[\r\n\t]+/', ' ', $v));
 }
 
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') out(405, false);
+if (!isset($_SERVER['REQUEST_METHOD']) || $_SERVER['REQUEST_METHOD'] !== 'POST') out(405, false);
 
 // pole-pułapka: wypełniają je tylko boty; udajemy sukces
 if (field('website', 200) !== '') out(200, true);
@@ -43,13 +41,13 @@ $body = "Imię i nazwisko: $name\n"
       . ($message !== '' ? $message : '(bez wiadomości)') . "\n";
 
 $subject = '=?UTF-8?B?' . base64_encode("Zapytanie ze strony: $name") . '?=';
-$headers = implode("\r\n", [
+$headers = implode("\r\n", array(
     'From: Detal Studio <' . SENDER . '>',
     'Reply-To: ' . $email,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
-]);
+));
 
 $sent = @mail(RECIPIENT, $subject, $body, $headers);
 out($sent ? 200 : 500, $sent);
