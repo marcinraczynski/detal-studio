@@ -1,0 +1,45 @@
+name: Diagnostyka domeny i serwera
+
+# Uruchamiane tylko ręcznie. Niczego nie zmienia na serwerze.
+on:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: DNS i odpowiedź strony
+        run: |
+          for q in "detalstudio.pl A" "www.detalstudio.pl A" "detalstudio.pl AAAA" "detalstudio.pl NS" "www.detalstudio.pl CNAME"; do
+            echo "== $q"; dig +short $q || true
+          done
+          for u in http://detalstudio.pl/ https://detalstudio.pl/ http://www.detalstudio.pl/ https://www.detalstudio.pl/; do
+            echo "== $u"
+            curl -sS -m 20 -o /tmp/body -D - "$u" 2>&1 | head -15 || true
+            echo "-- początek treści:"; head -c 300 /tmp/body 2>/dev/null | tr '\n' ' ' || true; echo
+          done
+      - name: Odczytaj dane FTP
+        id: ftp
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DIR: ${{ secrets.FTP_DIR }}
+          DETAL: ${{ secrets.DETAL }}
+        run: python3 .github/ftp-config.py
+      - name: Zawartość serwera
+        env:
+          LFTP_PASSWORD: ${{ steps.ftp.outputs.password }}
+          FTP_HOST: ${{ steps.ftp.outputs.server }}
+          FTP_USER: ${{ steps.ftp.outputs.username }}
+          FTP_TARGET: ${{ steps.ftp.outputs.dir }}
+        run: |
+          sudo apt-get install -y -qq lftp > /dev/null
+          lftp --env-password -u "$FTP_USER" "sftp://$FTP_HOST" -e "
+            set sftp:auto-confirm yes; set net:max-retries 2; set net:timeout 20;
+            echo == katalog domowy; cls -la;
+            echo == katalog docelowy; cls -la $FTP_TARGET;
+            echo == img; cls -la ${FTP_TARGET}img/;
+            echo == .htaccess; cat ${FTP_TARGET}.htaccess;
+            bye" || true
