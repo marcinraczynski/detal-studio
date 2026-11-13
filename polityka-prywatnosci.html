@@ -29,6 +29,10 @@ p,ul{margin:0 0 14px}
 ul{padding-left:1.2em}
 li{margin-bottom:6px}
 li::marker{color:var(--pink)}
+code{font:400 .9em "Geist Mono",ui-monospace,monospace;color:var(--paper)}
+button{font:400 14px "Geist",system-ui,sans-serif;padding:9px 16px;border-radius:999px;border:1px solid var(--pink);background:none;color:var(--paper);cursor:pointer;transition:background .2s}
+button:hover{background:var(--pink)}
+#ck-state{margin-left:10px;font-size:14px;color:var(--muted)}
 footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line)}
 </style>
 </head>
@@ -53,10 +57,18 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line)}
   <p>Danych nie sprzedajemy i nie udostępniamy do celów marketingowych. Mają do nich dostęp tylko podmioty, które pomagają nam prowadzić stronę i pocztę:</p>
   <ul>
     <li>OVH sp. z o.o. – hosting strony i poczty.</li>
+    <li>Google Ireland Limited – statystyki odwiedzin (tylko za Twoją zgodą).</li>
   </ul>
 
-  <h2>Pliki cookie i zewnętrzne zasoby</h2>
-  <p>Strona nie używa plików cookie, narzędzi analitycznych ani reklamowych. W pamięci przeglądarki (localStorage) zapisujemy tylko wybrany język strony.</p>
+  <h2>Statystyki i pliki cookie</h2>
+  <p>Jeśli wyrazisz zgodę w okienku na stronie, korzystamy z Google Analytics 4, żeby wiedzieć, ile osób odwiedza stronę, skąd przychodzą i które części oglądają. Bez zgody narzędzie się nie uruchamia i nie zapisuje żadnych plików cookie.</p>
+  <p>Po wyrażeniu zgody Google Analytics zapisuje w przeglądarce pliki cookie <code>_ga</code> i <code>_ga_314TM6Z7DE</code> (ważne do 2 lat), które pozwalają odróżnić odwiedzających od siebie. Zbierane są między innymi: przybliżona lokalizacja ustalana na podstawie adresu IP (sam adres nie jest zapisywany), rodzaj urządzenia i przeglądarki, odwiedzone podstrony i czas wizyty. Nie łączymy tych danych z danymi z formularza.</p>
+  <p>Podstawą przetwarzania jest Twoja zgoda (art. 6 ust. 1 lit. a RODO). Dostawcą narzędzia jest Google Ireland Limited; dane mogą być przekazywane do Google LLC w USA na podstawie programu Data Privacy Framework. Dane w Google Analytics przechowujemy do 14 miesięcy.</p>
+  <p>Zgodę możesz wycofać w każdej chwili. Nie wpływa to na zgodność z prawem przetwarzania sprzed wycofania.</p>
+  <p><button type="button" id="ck-reset">Wycofaj zgodę na statystyki</button> <span id="ck-state" role="status"></span></p>
+  <p>Poza tym w pamięci przeglądarki (localStorage) zapisujemy tylko wybrany język strony i Twoją decyzję w sprawie statystyk. Nie używamy narzędzi reklamowych.</p>
+
+  <h2>Zewnętrzne zasoby</h2>
   <p>Czcionki ładują się z serwerów Google Fonts, a biblioteka do animacji z serwerów cdnjs (Cloudflare). Przy pobieraniu tych plików Twoja przeglądarka przekazuje tym dostawcom adres IP, co może oznaczać przekazanie danych poza Europejski Obszar Gospodarczy.</p>
   <p>Link „Umów 30 minut” prowadzi do serwisu Calendly, który ma własną politykę prywatności.</p>
 
@@ -77,5 +89,18 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line)}
 
   <footer>Detal Studio · 2026</footer>
 </main>
+<script>
+document.getElementById("ck-reset").addEventListener("click", function () {
+  try { localStorage.setItem("ds-consent", "no"); } catch (e) {}
+  // remove Google Analytics cookies on this domain and its parent
+  var host = location.hostname, domains = ["", host, "." + host, "." + host.replace(/^www\./, "")];
+  document.cookie.split(";").forEach(function (c) {
+    var name = c.split("=")[0].trim();
+    if (name.indexOf("_ga") !== 0) return;
+    domains.forEach(function (d) { document.cookie = name + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/" + (d ? "; domain=" + d : ""); });
+  });
+  document.getElementById("ck-state").textContent = "Zgoda wycofana. Statystyki są wyłączone.";
+});
+</script>
 </body>
 </html>

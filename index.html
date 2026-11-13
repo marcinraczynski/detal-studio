@@ -144,6 +144,16 @@ input::placeholder,textarea::placeholder{color:#5f565a}
 
 footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
+.cookie{position:fixed;z-index:20;right:var(--gutter);bottom:18px;width:min(23rem,calc(100vw - 2 * var(--gutter)));padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:rgba(12,10,11,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.cookie[hidden]{display:none}
+.cookie p{margin:0 0 12px;font-size:13px;line-height:1.5;color:#cdc5c2}
+.cookie a{text-underline-offset:3px}
+.cookie div{display:flex;gap:8px;justify-content:flex-end}
+.cookie button{font:400 13px var(--f-body);padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:none;color:var(--paper);cursor:pointer;transition:background .2s,border-color .2s,color .2s}
+.cookie button:hover{border-color:var(--muted)}
+.cookie #ck-yes{border-color:var(--pink)}
+.cookie #ck-yes:hover{background:var(--pink)}
+body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
 @media (max-width:860px){
   .rail,.hud,.cta-sm,.brand .word{display:none}
   #start{align-items:flex-end;padding-bottom:10svh}
@@ -296,6 +306,11 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
   </section>
 </main>
 
+<div class="cookie" id="cookie" role="region" aria-label="Cookies" hidden>
+  <p><span data-i18n="ckText"></span> <a href="polityka-prywatnosci.html" data-i18n="privacy"></a></p>
+  <div><button type="button" id="ck-no" data-i18n="ckNo"></button><button type="button" id="ck-yes" data-i18n="ckYes"></button></div>
+</div>
+
 <footer>Detal Studio · 2026 · <a href="polityka-prywatnosci.html" data-i18n="privacy"></a></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -327,6 +342,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       fTopic:"Czego dotyczy projekt?", c1:"Strategia", c2:"Marka", c3:"Strona www", c4:"Kampania", c5:"Coś innego",
       fName:"Imię i nazwisko", fEmail:"E-mail", fCompany:"Firma (opcjonalnie)", fMsg:"Kilka słów o projekcie", fMsgPh:"Cel, termin, co już macie",
       consent:"Dane z formularza wykorzystamy tylko do odpowiedzi na Twoją wiadomość.", privacy:"Polityka prywatności",
+      ckText:"Używamy Google Analytics, żeby wiedzieć, ile osób odwiedza stronę. Zgadzasz się na pliki cookie do statystyk?", ckNo:"Nie", ckYes:"Zgadzam się",
       send:"Wyślij", alt:"Wolisz od razu porozmawiać?", altLink:"Umów 30 minut",
       errName:"Podaj imię i nazwisko.", errEmail:"Podaj poprawny adres e-mail, żebyśmy mogli odpowiedzieć.",
       doneH:"Dziękujemy.", doneP:"Wrócimy do Ciebie w ciągu jednego dnia roboczego.",
@@ -356,6 +372,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       fTopic:"What is it about?", c1:"Strategy", c2:"Brand", c3:"Website", c4:"Campaign", c5:"Something else",
       fName:"Full name", fEmail:"Email", fCompany:"Company (optional)", fMsg:"A few words about the project", fMsgPh:"Goal, timing, what you already have",
       consent:"We use the form data only to reply to your message.", privacy:"Privacy policy",
+      ckText:"We use Google Analytics to see how many people visit the site. Do you accept cookies for statistics?", ckNo:"No", ckYes:"I agree",
       send:"Send", alt:"Rather talk right away?", altLink:"Book 30 minutes",
       errName:"Please enter your name.", errEmail:"Please enter a valid email address so we can reply.",
       doneH:"Thank you.", doneP:"We'll get back to you within one working day.",
@@ -432,6 +449,27 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       .catch(() => { err.textContent = dict[lang].errSend; })
       .finally(() => { btn.disabled = false; btn.textContent = dict[lang].send; });
   });
+
+  /* ---------- analytics: Google Analytics loads only after consent ---------- */
+  const GA_ID = "G-314TM6Z7DE";
+  function loadGA() {
+    if (window.gtag) return;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag("js", new Date()); gtag("config", GA_ID);
+    const sc = document.createElement("script"); sc.async = true;
+    sc.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID;
+    document.head.appendChild(sc);
+  }
+  {
+    const bar = document.getElementById("cookie");
+    let consent = null;
+    try { consent = localStorage.getItem("ds-consent"); } catch (e) {}
+    if (consent === "yes") loadGA(); else if (consent !== "no") bar.hidden = false;
+    const decide = v => { try { localStorage.setItem("ds-consent", v); } catch (e) {} bar.hidden = true; if (v === "yes") loadGA(); };
+    document.getElementById("ck-yes").addEventListener("click", () => decide("yes"));
+    document.getElementById("ck-no").addEventListener("click", () => decide("no"));
+  }
 
   /* ---------- scroll → story position ---------- */
   const sections = [...document.querySelectorAll("[data-scene]")];
@@ -579,18 +617,29 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
   const sRing = new THREE.LineLoop(circle(2.45, 128), lineMat(0.3)); sRing.rotation.set(1.1, 0, 0.3);
   strat.add(sOuter, sMid, sIn, sAxes, sRing);
 
-  // 5: brand – one frame repeated into a twisting column
-  const brand = new THREE.Group(); brand.position.copy(ST[5]); brand.rotation.set(0.35, 0, -0.45); scene.add(brand);
-  const frames = [];
-  { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute([-1,0,-1, 1,0,-1, 1,0,1, -1,0,1], 3));
-    const NF = 44;
-    for (let i = 0; i < NF; i++) {
-      const u = i / (NF - 1), f = new THREE.LineLoop(g, lineMat(i % 4 === 0 ? 0.8 : 0.3));
-      f.position.y = (u - 0.5) * 4.8; f.scale.setScalar(1.05);
-      frames.push(f); brand.add(f);
+  // 5: brand – one mark, drawn as a ribbon of parallel strokes tied into a single knot
+  const brand = new THREE.Group(); brand.position.copy(ST[5]); brand.rotation.set(0.5, 0, -0.3); scene.add(brand);
+  const knot = new THREE.Group(); brand.add(knot);
+  { const NSTR = 9, SEG = 420, R = 1.5;
+    for (let i = 0; i < NSTR; i++) {
+      const r = 0.5 + i * 0.07, a = [];
+      for (let j = 0; j < SEG; j++) {
+        const t = j / SEG * Math.PI * 2, ph = 2 * t, th = 3 * t, q = R + r * Math.cos(th);
+        a.push(q * Math.cos(ph), r * Math.sin(th), q * Math.sin(ph));
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(a, 3));
+      const mid = i === (NSTR - 1) / 2;
+      knot.add(new THREE.LineLoop(g, lineMat(mid ? 0.95 : 0.22 + 0.5 * (1 - Math.abs(i - (NSTR - 1) / 2) / ((NSTR - 1) / 2)), mid ? PINK : PAPER)));
     }
-    const ag = new THREE.BufferGeometry(); ag.setAttribute("position", new THREE.Float32BufferAttribute([0,-3,0, 0,3,0], 3));
-    brand.add(new THREE.LineSegments(ag, lineMat(0.25)));
+    // construction lines, as on a logo sheet
+    const guide = new THREE.Group();
+    guide.add(new THREE.LineLoop(circle(R, 128), lineMat(0.16)), new THREE.LineLoop(circle(R + 1.12, 160), lineMat(0.22)));
+    const sq = new THREE.BufferGeometry(); const e = R + 1.12;
+    sq.setAttribute("position", new THREE.Float32BufferAttribute([-e,0,-e, e,0,-e, e,0,e, -e,0,e], 3));
+    guide.add(new THREE.LineLoop(sq, lineMat(0.14)));
+    const ax = new THREE.BufferGeometry(); ax.setAttribute("position", new THREE.Float32BufferAttribute([-e-.5,0,0, e+.5,0,0, 0,0,-e-.5, 0,0,e+.5], 3));
+    guide.add(new THREE.LineSegments(ax, lineMat(0.14)));
+    brand.add(guide);
   }
 
   // 6: communication – ripples spreading from one point
@@ -718,8 +767,7 @@ footer{position:relative;z-index:1;padding:14vh var(--gutter) 50px;font:400 11px
       sAxes.rotation.set(0.4, t * 0.05, 0.2); sRing.rotation.y = t * 0.2;
     }
     if (s > 3.4 && s < 6.6) {
-      const tw = 0.05 + (rm ? 0 : 0.03 * Math.sin(t * 0.45));
-      for (let i = 0; i < frames.length; i++) frames[i].rotation.y = (i - frames.length / 2) * tw + t * 0.12;
+      knot.rotation.set(rm ? 0 : 0.18 * Math.sin(t * 0.3), t * 0.14, 0);
     }
     if (s > 4.6 && s < 7.6) {
       for (const r of rings) {
