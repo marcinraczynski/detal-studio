@@ -29,17 +29,22 @@ jobs:
           DETAL: ${{ secrets.DETAL }}
         run: python3 .github/ftp-config.py
 
-      - name: Wyślij pliki przez FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ steps.ftp.outputs.server }}
-          username: ${{ steps.ftp.outputs.username }}
-          password: ${{ steps.ftp.outputs.password }}
-          server-dir: ${{ steps.ftp.outputs.dir }}
-          protocol: ftps
-          exclude: |
-            **/.git*
-            **/.git*/**
-            .github/**
-            CLAUDE.md
-            .nojekyll
+      # OVH nie obsługuje FTPS, więc pliki idą przez SFTP (te same dane co do FTP).
+      - name: Wyślij pliki przez SFTP
+        env:
+          LFTP_PASSWORD: ${{ steps.ftp.outputs.password }}
+          FTP_HOST: ${{ steps.ftp.outputs.server }}
+          FTP_USER: ${{ steps.ftp.outputs.username }}
+          FTP_TARGET: ${{ steps.ftp.outputs.dir }}
+        run: |
+          sudo apt-get install -y -qq lftp > /dev/null
+          mkdir _site
+          rsync -a --exclude='.git*' --exclude='_site' --exclude='CLAUDE.md' --exclude='.nojekyll' ./ _site/
+          lftp --env-password -u "$FTP_USER" "sftp://$FTP_HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 2;
+            set net:timeout 20;
+            set cmd:fail-exit yes;
+            mirror --reverse --verbose --no-perms _site/ $FTP_TARGET;
+            cls -1 $FTP_TARGET;
+            bye"
