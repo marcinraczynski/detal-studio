@@ -179,13 +179,20 @@ body.lang-swap .cookie button{opacity:1!important;color:transparent!important}
   .rail,.hud,.cta-sm,.brand .word{display:none}
   #start{align-items:flex-end;padding-bottom:10svh}
   #start .text{max-width:none}
-  .chapter .text{top:46svh;max-width:none;margin:0 calc(var(--gutter) * -1);margin-right:calc(var(--gutter) * -1);padding:20px var(--gutter) 24px;background:rgba(12,10,11,.8);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);text-align:left}
+  /* no panel behind the copy: the scene itself fades into the dark below the object */
+  main::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,rgba(12,10,11,0) 30%,rgba(12,10,11,.7) 46%,rgba(12,10,11,.93) 60%,var(--ink) 78%)}
+  .chapter .text{top:46svh;max-width:none;margin:0;padding:20px 0 24px;text-align:left}
+  .roles{white-space:normal;font-size:10px;line-height:1.9;margin:14px 0}
+  #zespol h2{margin-bottom:16px}
   .chapter .pos-c{text-align:center}
   .area.pos-r p{margin-left:0}
   .side{border-left:0}
   #kontakt{padding-top:50svh}
-  #kontakt .text{max-width:none;margin:0 calc(var(--gutter) * -1);padding:24px var(--gutter);background:rgba(12,10,11,.88);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  #kontakt .text{max-width:none;margin:0 calc(var(--gutter) * -1);padding:72px var(--gutter) 24px;background:linear-gradient(to bottom,rgba(12,10,11,0),rgba(12,10,11,.9) 96px,rgba(12,10,11,.94))}
   .row{grid-template-columns:1fr}
+}
+@media (max-width:860px) and (max-height:700px){
+  #zespol .text{top:34svh}
 }
 </style>
 </head>
