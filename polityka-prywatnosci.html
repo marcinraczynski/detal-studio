@@ -20,7 +20,8 @@ a{color:var(--paper);text-underline-offset:3px}
 :focus-visible{outline:2px solid var(--pink);outline-offset:3px}
 main{max-width:44rem;margin:0 auto;padding:clamp(40px,8vw,96px) clamp(20px,4vw,56px) 80px}
 .back,.meta,footer{font:400 11px "Geist Mono",ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
-.back{display:inline-block;margin-bottom:56px;text-decoration:none}
+.top{display:flex;justify-content:space-between;gap:16px;margin-bottom:56px}
+.back{text-decoration:none}
 .back:hover{color:var(--paper)}
 h1,h2{font-family:"Instrument Serif","Times New Roman",serif;font-weight:400;color:var(--paper);margin:0;text-wrap:balance}
 h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1;margin-bottom:14px}
@@ -38,7 +39,7 @@ footer{margin-top:72px;padding-top:24px;border-top:1px solid var(--line)}
 </head>
 <body>
 <main>
-  <a class="back" href="./">← Detal Studio</a>
+  <div class="top"><a class="back" href="./">← Detal Studio</a><a class="back" href="privacy-policy.html" lang="en" hreflang="en">English</a></div>
   <h1>Polityka prywatności</h1>
   <p class="meta">Obowiązuje od 13 listopada 2026</p>
 

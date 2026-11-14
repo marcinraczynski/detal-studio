@@ -30,3 +30,4 @@ Nie mamy stałych działów. Do każdego zlecenia dobieramy tylu specjalistów, 
 
 - [Strona główna](https://detalstudio.pl/)
 - [Polityka prywatności](https://detalstudio.pl/polityka-prywatnosci.html)
+- [Privacy policy (English)](https://detalstudio.pl/privacy-policy.html)

@@ -55,7 +55,7 @@ Jednostronicowa strona Detal Studio (butikowe studio kreatywne: strategia, marka
 - Diagnostyka: `.github/workflows/diagnostyka.yml` (ręcznie) sprawdza DNS domeny, odpowiedź strony i zawartość serwera. Sesja w chmurze nie ma dostępu do domeny, więc to jedyny sposób weryfikacji.
 - Domena: 13.11.2026 `detalstudio.pl` nie miała rekordów A; trzeba ją dodać w panelu OVH (Hosting → Multisite, katalog `www`, SSL).
 - Formularz: `send.php` (PHP `mail()` na OVH) wysyła zgłoszenia na `marcin@detalstudio.pl`. Działa tylko na OVH, nie na GitHub Pages. Pisany pod stare PHP (hosting z 2011 r., `.htaccess` z `PHP_VER 5`).
-- Zrobione: meta, favicon, obrazek OG, polityka prywatności (`polityka-prywatnosci.html`, bazowy szablon), informacja pod formularzem.
+- Zrobione: meta, favicon, obrazek OG, polityka prywatności (`polityka-prywatnosci.html` i angielska `privacy-policy.html`, bazowy szablon; zmiany wprowadzać w obu), informacja pod formularzem.
 - Dla robotów: `robots.txt`, `sitemap.xml`, `llms.txt`. Strona błędu: `404.html`, podpięta w `.htaccess` (plik jest w repo i nadpisuje ten na serwerze).
 - Statystyki: Google Analytics 4 (`G-314TM6Z7DE`) ładuje się dopiero po zgodzie w okienku cookies (`ds-consent` w localStorage); wycofanie zgody jest w polityce prywatności.
 - Test 3D lokalnie: Playwright z `--use-angle=swiftshader --enable-unsafe-swiftshader` i podstawionym three.js r128 z npm (cdnjs jest niedostępny z sesji).
