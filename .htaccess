@@ -1,0 +1,2 @@
+# Własna strona błędu dla nieistniejących adresów
+ErrorDocument 404 /404.html

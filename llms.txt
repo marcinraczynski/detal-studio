@@ -1,0 +1,32 @@
+# Detal Studio
+
+> Detal Studio to butikowe studio kreatywne z Jeleniej Góry. Prowadzimy marki od strategii, przez identyfikację, po komunikację. Na każdym etapie pilnujemy szczegółów, bo to one decydują o efekcie.
+
+Detal Studio is a boutique creative studio based in Jelenia Góra, Poland. We take brands from strategy, through identity, to communication. The site is a single page available in Polish (default) and English.
+
+## Jak pracujemy
+
+- Zrozumienie: zanim powstanie pierwszy szkic, poznajemy firmę, ludzi i rynek. Szukamy też tego, czego klient sam jeszcze nie nazwał.
+- Wzór: układamy pojedyncze obserwacje tak długo, aż widać w nich porządek i jedną myśl, na której można budować.
+- Całość: z tej jednej myśli powstaje strategia, marka i komunikacja.
+
+## Co robimy
+
+- Strategia: pozycjonowanie, przekaz i plan działań.
+- Marka: identyfikacja wizualna, nazwa i ton. Jeden spójny wizerunek, od logo po ostatni plik.
+- Komunikacja: strony www, kampanie 360, materiały i assety. Od pomysłu do publikacji.
+
+## Zespół
+
+Nie mamy stałych działów. Do każdego zlecenia dobieramy tylu specjalistów, ilu potrzeba: strategów, projektantów, specjalistów i deweloperów. Klient ma jeden kontakt i jedną osobę odpowiedzialną za efekt.
+
+## Kontakt
+
+- [Formularz kontaktowy](https://detalstudio.pl/#kontakt): odpowiadamy w ciągu jednego dnia roboczego.
+- E-mail: kontakt@detalstudio.pl
+- [Rozmowa 30 minut](https://calendly.com/marcinraczynski/30-minutowe-spotkanie-1-na-1)
+
+## Pozostałe
+
+- [Strona główna](https://detalstudio.pl/)
+- [Polityka prywatności](https://detalstudio.pl/polityka-prywatnosci.html)
