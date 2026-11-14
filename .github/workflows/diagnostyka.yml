@@ -24,9 +24,14 @@ jobs:
           done
       - name: Pliki dla robotów, strona 404, formularz
         run: |
+          UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+          echo "== strona główna: curl domyślny / jako przeglądarka / jako Googlebot"
+          curl -sS -m 20 -o /dev/null -w "curl: %{http_code}\n" https://detalstudio.pl/ || true
+          curl -sS -m 20 -o /dev/null -w "przeglądarka: %{http_code}\n" -A "$UA" -H "Accept: text/html" -H "Accept-Language: pl" https://detalstudio.pl/ || true
+          curl -sS -m 20 -o /dev/null -w "Googlebot: %{http_code}\n" -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" https://detalstudio.pl/ || true
           for u in /robots.txt /sitemap.xml /llms.txt /nie-ma-takiej-strony /send.php; do
             echo "== $u"
-            curl -sS -m 20 -o /tmp/b -w "status %{http_code}, typ %{content_type}\n" "http://detalstudio.pl$u" || true
+            curl -sS -m 20 -A "$UA" -H "Accept-Language: pl" -o /tmp/b -w "status %{http_code}, typ %{content_type}\n" "https://detalstudio.pl$u" || true
             head -c 160 /tmp/b | tr '\n' ' '; echo
           done
       - name: Odczytaj dane FTP
@@ -52,4 +57,5 @@ jobs:
             echo == katalog docelowy; cls -la $FTP_TARGET;
             echo == img; cls -la ${FTP_TARGET}img/;
             echo == .htaccess; cat ${FTP_TARGET}.htaccess;
+            echo == .ovhconfig; cat .ovhconfig;
             bye" || true
