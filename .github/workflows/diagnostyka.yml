@@ -29,6 +29,14 @@ jobs:
           curl -sS -m 20 -o /dev/null -w "curl: %{http_code}\n" https://detalstudio.pl/ || true
           curl -sS -m 20 -o /dev/null -w "przeglądarka: %{http_code}\n" -A "$UA" -H "Accept: text/html" -H "Accept-Language: pl" https://detalstudio.pl/ || true
           curl -sS -m 20 -o /dev/null -w "Googlebot: %{http_code}\n" -A "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)" https://detalstudio.pl/ || true
+          echo "== przekierowania (status i dokąd)"
+          for u in http://detalstudio.pl/ http://www.detalstudio.pl/ https://www.detalstudio.pl/llms.txt https://detalstudio.pl/; do
+            curl -sS -m 20 -A "$UA" -o /dev/null -w "$u -> %{http_code} %{redirect_url}\n" "$u" || true
+          done
+          echo "== strona po wszystkich przekierowaniach"
+          curl -sSL -m 30 --max-redirs 5 -A "$UA" -o /tmp/home -w "koniec: %{http_code} %{url_effective} (przekierowań: %{num_redirects})\n" http://www.detalstudio.pl/ || true
+          echo "== treść widoczna bez JavaScriptu (liczba trafień)"
+          for t in "Najpierw" "Strategia" "Zespół dobrany" "Opowiedz nam"; do echo "$t: $(grep -c "$t" /tmp/home || true)"; done
           echo "== roboty AI i inne (llms.txt)"
           while IFS='|' read -r name ua; do
             curl -sS -m 20 -o /dev/null -w "$name: %{http_code}\n" -A "$ua" https://detalstudio.pl/llms.txt || true

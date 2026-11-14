@@ -60,4 +60,7 @@ Jednostronicowa strona Detal Studio (butikowe studio kreatywne: strategia, marka
 - Statystyki: Google Analytics 4 (`G-314TM6Z7DE`) ładuje się dopiero po zgodzie w okienku cookies (`ds-consent` w localStorage); wycofanie zgody jest w polityce prywatności.
 - Test 3D lokalnie: Playwright z `--use-angle=swiftshader --enable-unsafe-swiftshader` i podstawionym three.js r128 z npm (cdnjs jest niedostępny z sesji).
 - Formularz potwierdzony przez Marcina 14.11.2026 (maile dochodzą).
-- Zostało: punkt 6 (test na urządzeniach); teksty strony są wstawiane skryptem, więc roboty bez JS widzą tylko nagłówek startowy.
+- Teksty w HTML: `.github/static-copy.py` wpisuje polskie teksty z `dict` na stałe do `index.html` (dla robotów bez JS). Uruchamia się przy każdym wdrożeniu; po zmianie tekstów w `dict` uruchomić też lokalnie i zacommitować.
+- Adres: `.htaccess` przekierowuje `http://` i `www.` na `https://detalstudio.pl` (301).
+- Firewall aplikacyjny OVH jest włączony i odrzuca zapytania z domyślnym User-Agentem curl (403); w diagnostyce używać User-Agenta przeglądarki.
+- Zostało: punkt 6 (test na urządzeniach).

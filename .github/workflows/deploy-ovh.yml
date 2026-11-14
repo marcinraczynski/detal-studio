@@ -29,6 +29,10 @@ jobs:
           DETAL: ${{ secrets.DETAL }}
         run: python3 .github/ftp-config.py
 
+      # Polskie teksty na stałe w HTML, żeby widziały je roboty bez JavaScriptu
+      - name: Wpisz teksty do HTML
+        run: python3 .github/static-copy.py
+
       # OVH nie obsługuje FTPS, więc pliki idą przez SFTP (te same dane co do FTP).
       - name: Wyślij pliki przez SFTP
         env:
